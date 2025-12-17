@@ -106,8 +106,6 @@ class UI {
 
     // set doc content
     doc.layers.setSingleLayer(new Layer(img));
-    doc.canvas.w = img.width;
-    doc.canvas.h = img.height;
 
     // reset view (optional)
     doc.view.zoom = 1.0;

@@ -1,5 +1,5 @@
 class Document {
-  CanvasSpec canvas = new CanvasSpec(900, 600);
+  CanvasSpec canvas = new CanvasSpec(1000, 800);
   ViewState view = new ViewState();
 
   LayerStack layers = new LayerStack();
