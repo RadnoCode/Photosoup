@@ -164,7 +164,7 @@ class UI {
 
     // Rename on double-click so the UI feels like a lightweight Photoshop layer list.
     layerList.addMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
+      public void mouseClicked(java.awt.event.MouseEvent e) {
         if (e.getClickCount() == 2) {
           promptRename();
         }
