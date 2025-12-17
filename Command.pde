@@ -40,6 +40,183 @@ class CommandManager {
   }
 }
 
+// ---------- Layer management commands (for undo/redo of panel actions) ----------
+class AddLayerCommand implements Command {
+  Layer layer;
+  int index;
+
+  // Optional canvas/view adjustments when bringing in the very first layer.
+  boolean resizeCanvasIfFirst;
+  int prevCanvasW, prevCanvasH;
+  float prevZoom, prevPanX, prevPanY;
+  boolean storedCanvasState = false;
+
+  AddLayerCommand(Layer layer, int index) {
+    this(layer, index, false);
+  }
+
+  AddLayerCommand(Layer layer, int index, boolean resizeCanvasIfFirst) {
+    this.layer = layer;
+    this.index = index;
+    this.resizeCanvasIfFirst = resizeCanvasIfFirst;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+
+    // When this is the first layer we are adding (including redo), capture the
+    // old canvas/view to restore on undo and optionally resize to match the
+    // incoming image so beginners immediately see the canvas fit the photo.
+    if (resizeCanvasIfFirst && doc.layers.isEmpty()) {
+      if (!storedCanvasState) {
+        prevCanvasW = doc.canvas.w;
+        prevCanvasH = doc.canvas.h;
+        prevZoom = doc.view.zoom;
+        prevPanX = doc.view.panX;
+        prevPanY = doc.view.panY;
+        storedCanvasState = true;
+      }
+
+      if (layer.img != null) {
+        doc.canvas.w = layer.img.width;
+        doc.canvas.h = layer.img.height;
+        doc.view.zoom = 1.0;
+        doc.view.panX = 80;
+        doc.view.panY = 50;
+      }
+    }
+
+    int target = constrain(index, 0, doc.layers.list.size());
+    doc.layers.insertLayer(target, layer);
+    this.index = target; // keep the clamped slot for redo/undo stability
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    int current = doc.layers.list.indexOf(layer);
+    if (current >= 0) {
+      doc.layers.removeLayer(current);
+    }
+
+    if (resizeCanvasIfFirst && doc.layers.isEmpty() && storedCanvasState) {
+      doc.canvas.w = prevCanvasW;
+      doc.canvas.h = prevCanvasH;
+      doc.view.zoom = prevZoom;
+      doc.view.panX = prevPanX;
+      doc.view.panY = prevPanY;
+    }
+
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public String name() {
+    return "Add Layer";
+  }
+}
+
+class RemoveLayerCommand implements Command {
+  Layer layer;
+  int priorIndex;
+
+  RemoveLayerCommand(Layer layer, int index) {
+    this.layer = layer;
+    this.priorIndex = index;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    int idx = doc.layers.list.indexOf(layer);
+    if (idx < 0 && priorIndex >= 0 && priorIndex < doc.layers.list.size()) {
+      idx = priorIndex;
+    }
+    if (idx < 0 || idx >= doc.layers.list.size()) return;
+
+    priorIndex = idx; // keep the last known index so undo can re-insert
+    doc.layers.removeLayer(idx);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    int target = constrain(priorIndex, 0, doc.layers.list.size());
+    doc.layers.insertLayer(target, layer);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public String name() {
+    return "Remove Layer";
+  }
+}
+
+class MoveLayerCommand implements Command {
+  Layer layer;
+  int fromIndex;
+  int toIndex;
+
+  MoveLayerCommand(Layer layer, int fromIndex, int toIndex) {
+    this.layer = layer;
+    this.fromIndex = fromIndex;
+    this.toIndex = toIndex;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    int current = doc.layers.list.indexOf(layer);
+    if (current < 0) return;
+
+    int dest = constrain(toIndex, 0, doc.layers.list.size() - 1);
+    doc.layers.moveLayer(current, dest);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    int current = doc.layers.list.indexOf(layer);
+    if (current < 0) return;
+
+    int dest = constrain(fromIndex, 0, doc.layers.list.size() - 1);
+    doc.layers.moveLayer(current, dest);
+    doc.renderFlags.dirtyComposite = true;
+  }
+
+  public String name() {
+    return "Reorder Layer";
+  }
+}
+
+class RenameLayerCommand implements Command {
+  Layer layer;
+  String before;
+  String after;
+
+  RenameLayerCommand(Layer layer, String newName) {
+    this.layer = layer;
+    this.after = (newName == null) ? null : newName.trim();
+    if (layer != null) {
+      this.before = layer.name;
+    }
+  }
+
+  public void execute(Document doc) {
+    if (layer == null || after == null || after.isEmpty()) return;
+    int idx = doc.layers.list.indexOf(layer);
+    if (idx < 0) return;
+    doc.layers.renameLayer(idx, after);
+  }
+
+  public void undo(Document doc) {
+    if (layer == null || before == null) return;
+    int idx = doc.layers.list.indexOf(layer);
+    if (idx < 0) return;
+    doc.layers.renameLayer(idx, before);
+  }
+
+  public String name() {
+    return "Rename Layer";
+  }
+}
+
 class RotateCommand implements Command{
   Layer layer;
   float before,after;

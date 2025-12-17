@@ -17,14 +17,27 @@ class Renderer {
 
     drawChecker(doc.canvas.w, doc.canvas.h, 20);
 
-    // draw active layer only (MVP)
+    // draw all visible layers in stack order so the Swing list matches canvas order
+    for (int i = 0; i < doc.layers.list.size(); i++) {
+      Layer layer = doc.layers.list.get(i);
+      if (layer == null || layer.img == null || !layer.visible) continue;
+
+      pushMatrix();
+      layer.applyTransform();
+      tint(255, 255 * layer.opacity);
+      image(layer.img, 0, 0);
+      noTint();
+      popMatrix();
+    }
+
+    // gently highlight the active layer to give feedback in canvas space
     Layer active = doc.layers.getActive();
-    if (active != null && active.img != null && active.visible) { 
+    if (active != null && active.img != null && active.visible) {
+      stroke(255, 200, 80, 180);
+      noFill();
       pushMatrix();
       active.applyTransform();
-      tint(255, 255 * active.opacity);
-      image(active.img, 0, 0);
-      noTint();
+      rect(0, 0, active.img.width, active.img.height);
       popMatrix();
     }
 

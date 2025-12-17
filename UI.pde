@@ -1,13 +1,31 @@
+import javax.swing.*;
+import javax.swing.event.*;
+import java.awt.datatransfer.*;
+import java.awt.event.*;
+import processing.awt.PSurfaceAWT;
+
 class UI {
-  
-  int RightpanelW = 170;
+
+  int RightpanelW = 200;
   int RightpanelX =width-RightpanelW;
   int LeftPannelW=64;
 
 
-  UIButton btnOpen, btnMove, btnCrop, btnUndo, btnRedo;
+  UIButton btnOpen, btnAddLayer, btnDeleteLayer, btnMove, btnCrop, btnUndo, btnRedo;
 
-  UI() {
+  // Swing components embedded inside the Processing frame so beginners can see how
+  // Processing and Swing can cooperate.
+  JList<String> layerList;
+  DefaultListModel<String> layerModel;
+  JScrollPane layerScroll;
+  JPanel swingOverlay;
+
+  Document document;
+  CommandManager history;
+
+  UI(Document document, CommandManager history) {
+    this.document = document;
+    this.history = history;
     int x = RightpanelX + 12;
     int y = 20;
     int w = RightpanelW - 24;
@@ -15,6 +33,10 @@ class UI {
     int gap = 10;
 
     btnOpen = new UIButton(x, y, w, h, "Open (O)");
+    y += h + gap;
+    btnAddLayer = new UIButton(x, y, w, h, "New Layer");
+    y += h + gap;
+    btnDeleteLayer = new UIButton(x, y, w, h, "Delete Layer");
     y += h + gap;
     btnMove = new UIButton(x, y, w, h, "Move (M)");
     y += h + gap;
@@ -24,17 +46,25 @@ class UI {
     y += h + gap;
     btnRedo = new UIButton(x, y, w, h, "Redo");
     y += h + gap;
+
+    setupLayerPanel();
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
+    RightpanelX = width - RightpanelW;
     // panel background
     noStroke();
     fill(45);
     rect(RightpanelX, 0, RightpanelW, height);
     rect(0,0,LeftPannelW,height);
 
+    updateSwingPanelBounds();
+    refreshLayerList(doc);
+
     // buttons
     btnOpen.draw(false);
+    btnAddLayer.draw(false);
+    btnDeleteLayer.draw(false);
     btnMove.draw("Move".equals(tools.activeName()));
     btnCrop.draw("Crop".equals(tools.activeName()));
     btnUndo.draw(false);
@@ -54,6 +84,7 @@ class UI {
       fill(180);
       Layer a = doc.layers.getActive();
       text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
+      text("Active Layer: " + a.name, RightpanelX + 12, height - 115);
     }
   }
 
@@ -63,6 +94,14 @@ class UI {
     // buttons (generate intents)
     if (btnOpen.hit(mx, my)) {
       openFileDialog();
+      return true;
+    }
+    if (btnAddLayer.hit(mx, my)) {
+      createBlankLayer(app.doc);
+      return true;
+    }
+    if (btnDeleteLayer.hit(mx, my)) {
+      deleteActiveLayer(app.doc);
       return true;
     }
     if (btnMove.hit(mx, my)) {
@@ -104,17 +143,161 @@ class UI {
     PImage img = loadImage(selection.getAbsolutePath());
     if (img == null) return;
 
-    // set doc content
-    doc.layers.setSingleLayer(new Layer(img));
-    doc.canvas.w = img.width;
-    doc.canvas.h = img.height;
+    // Append the layer instead of replacing so users can stack multiple images.
+    Layer newLayer = new Layer(img);
+    newLayer.name = selection.getName();
 
-    // reset view (optional)
-    doc.view.zoom = 1.0;
-    doc.view.panX = 80;
-    doc.view.panY = 50;
+    boolean firstLayer = doc.layers.list.isEmpty();
+    history.perform(doc, new AddLayerCommand(newLayer, doc.layers.list.size(), firstLayer));
+    refreshLayerList(doc);
+  }
 
-    doc.renderFlags.dirtyComposite = true;
+  // ---------- Swing layer list helpers ----------
+  void setupLayerPanel() {
+    layerModel = new DefaultListModel<String>();
+    layerList = new JList<String>(layerModel);
+    layerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    layerList.setVisibleRowCount(-1);
+    layerList.setDragEnabled(true);
+    layerList.setDropMode(DropMode.INSERT);
+    layerList.setTransferHandler(new LayerReorderHandler());
+
+    // Rename on double-click so the UI feels like a lightweight Photoshop layer list.
+    layerList.addMouseListener(new MouseAdapter() {
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          promptRename();
+        }
+      }
+    });
+
+    layerList.addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting()) return;
+        int idx = layerList.getSelectedIndex();
+        if (idx != document.layers.getActiveIndex()) {
+          document.layers.setActiveIndex(idx);
+        }
+      }
+    });
+
+    layerScroll = new JScrollPane(layerList);
+    layerScroll.setBorder(BorderFactory.createTitledBorder("Layers"));
+
+    swingOverlay = new JPanel(null);
+    swingOverlay.setOpaque(false);
+    swingOverlay.add(layerScroll);
+
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        PSurfaceAWT.SmoothCanvas canvas = (PSurfaceAWT.SmoothCanvas) surface.getNative();
+        JFrame frame = (JFrame) canvas.getFrame();
+        frame.getLayeredPane().add(swingOverlay, JLayeredPane.PALETTE_LAYER);
+        updateSwingPanelBounds();
+      }
+    });
+  }
+
+  void updateSwingPanelBounds() {
+    if (swingOverlay == null) return;
+    int listHeight = height - 260; // Leave room for the existing Processing buttons
+    swingOverlay.setBounds(0, 0, width, height);
+    layerScroll.setBounds(RightpanelX + 8, 230, RightpanelW - 16, max(120, listHeight));
+    swingOverlay.revalidate();
+    swingOverlay.repaint();
+  }
+
+  void refreshLayerList(Document doc) {
+    if (layerModel == null) return;
+    // mirror layer names into the Swing list
+    if (layerModel.getSize() != doc.layers.list.size()) {
+      layerModel.removeAllElements();
+      for (Layer l : doc.layers.list) {
+        layerModel.addElement(l.name);
+      }
+    } else {
+      for (int i = 0; i < doc.layers.list.size(); i++) {
+        String existing = layerModel.get(i);
+        String target = doc.layers.list.get(i).name;
+        if (!existing.equals(target)) {
+          layerModel.set(i, target);
+        }
+      }
+    }
+
+    if (doc.layers.getActiveIndex() != layerList.getSelectedIndex()) {
+      int activeIdx = doc.layers.getActiveIndex();
+      if (activeIdx >= 0 && activeIdx < layerModel.getSize()) {
+        layerList.setSelectedIndex(activeIdx);
+      } else {
+        layerList.clearSelection();
+      }
+    }
+  }
+
+  void promptRename() {
+    int idx = layerList.getSelectedIndex();
+    if (idx < 0) return;
+    Layer target = document.layers.list.get(idx);
+    String newName = JOptionPane.showInputDialog("Rename layer", target.name);
+    if (newName != null) {
+      history.perform(document, new RenameLayerCommand(target, newName));
+      refreshLayerList(document);
+    }
+  }
+
+  // Create a blank transparent layer using the current canvas size.
+  void createBlankLayer(Document doc) {
+    PImage img = createImage(doc.canvas.w, doc.canvas.h, ARGB);
+    img.format = ARGB;
+    Layer layer = new Layer(img);
+    layer.name = "Layer " + (doc.layers.list.size() + 1);
+    history.perform(doc, new AddLayerCommand(layer, doc.layers.list.size()));
+    refreshLayerList(doc);
+  }
+
+  void deleteActiveLayer(Document doc) {
+    int idx = doc.layers.getActiveIndex();
+    if (idx < 0) return;
+    Layer target = doc.layers.getActive();
+    history.perform(doc, new RemoveLayerCommand(target, idx));
+    refreshLayerList(doc);
+  }
+
+  class LayerReorderHandler extends TransferHandler {
+    protected Transferable createTransferable(JComponent c) {
+      return new StringSelection(Integer.toString(layerList.getSelectedIndex()));
+    }
+
+    public int getSourceActions(JComponent c) {
+      return MOVE;
+    }
+
+    public boolean canImport(TransferSupport support) {
+      return support.isDataFlavorSupported(DataFlavor.stringFlavor);
+    }
+
+    public boolean importData(TransferSupport support) {
+      if (!canImport(support)) return false;
+      JList.DropLocation dl = (JList.DropLocation) support.getDropLocation();
+      int index = dl.getIndex();
+      try {
+        int from = Integer.parseInt((String) support.getTransferable().getTransferData(DataFlavor.stringFlavor));
+        if (from == index) return false;
+        if (index > layerModel.getSize()) index = layerModel.getSize();
+
+        int targetIndex = index;
+        if (from < targetIndex) targetIndex--;
+
+        Layer moved = document.layers.list.get(from);
+        history.perform(document, new MoveLayerCommand(moved, from, targetIndex));
+        refreshLayerList(document);
+        return true;
+      }
+      catch(Exception ex) {
+        return false;
+      }
+    }
   }
 }
 class UIButton {
