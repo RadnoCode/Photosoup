@@ -17,7 +17,19 @@ class Renderer {
 
     drawChecker(doc.canvas.w, doc.canvas.h, 20);
 
-    // draw active layer only (MVP)
+    for(int i=0;i<doc.layers.list.size();i++){
+      Layer l=doc.layers.list.get(i);
+      if(l==null||l.img==null||l.visible==false){
+        continue;
+      }
+      pushMatrix();
+      l.applyTransform();
+      tint(255,255*l.opacity);
+      image(l.img, 0, 0);
+      noTint();
+      popMatrix();
+    }
+    /*draw active layer only (MVP)
     Layer active = doc.layers.getActive();
     if (active != null && active.img != null && active.visible) { 
       pushMatrix();
@@ -26,7 +38,7 @@ class Renderer {
       image(active.img, 0, 0);
       noTint();
       popMatrix();
-    }
+    }*/
 
     // canvas border
     noFill();

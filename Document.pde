@@ -4,7 +4,10 @@ class Document {
 
   LayerStack layers = new LayerStack();
   RenderFlags renderFlags = new RenderFlags();
-
+  
+  void markChanged(){
+    renderFlags.dirtyComposite = true;
+  }
   Document() {
     // start with an empty doc (no layers yet)
   }

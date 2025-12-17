@@ -7,10 +7,10 @@ App app;
 void settings() {
   Rectangle usable = GraphicsEnvironment
     .getLocalGraphicsEnvironment()
-    .getMaximumWindowBounds();    // 已扣掉任务栏/停靠栏的“可用区域”（通常是逻辑坐标）
+    .getMaximumWindowBounds();    
     println(usable.width);
     println(usable.height);
-  float ratio = 0.90;             // 你要的占屏比例
+  float ratio = 0.90;
   int WinWideth = (int)(usable.width  * ratio);
   int WinHeight = (int)(usable.height * ratio);
   size(WinWideth,WinHeight);
