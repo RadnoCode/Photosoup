@@ -1,4 +1,6 @@
-import java.awt.*;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
+import processing.event.MouseEvent;
 
 App app;
 
