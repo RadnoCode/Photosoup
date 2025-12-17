@@ -11,8 +11,6 @@ class App {
     UI：基本节目图像，以及一些可以发送给CommandM的指令。
     CommandManger：管理Command记录，发出更改Doc的指令
    */
-
-
   App() {
     doc = new Document();
     renderer = new Renderer();

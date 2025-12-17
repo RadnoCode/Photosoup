@@ -1,11 +1,18 @@
+import java.awt.*;
+
 App app;
 
 // ---------- Processing entry ----------
 
-
 void settings() {
-  int WinHeight=int(displayHeight*0.533);
-  int WinWideth=int(displayWidth*0.533);
+  Rectangle usable = GraphicsEnvironment
+    .getLocalGraphicsEnvironment()
+    .getMaximumWindowBounds();    // 已扣掉任务栏/停靠栏的“可用区域”（通常是逻辑坐标）
+    println(usable.width);
+    println(usable.height);
+  float ratio = 0.90;             // 你要的占屏比例
+  int WinWideth = (int)(usable.width  * ratio);
+  int WinHeight = (int)(usable.height * ratio);
   size(WinWideth,WinHeight);
 }
 

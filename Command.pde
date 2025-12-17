@@ -51,7 +51,6 @@ class RotateCommand implements Command{
   void execute(Document doc){
     layer.rotation=after;
   }
-
   void undo(Document doc){
     layer.rotation=before;
   }
