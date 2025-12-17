@@ -105,7 +105,9 @@ class UI {
     if (img == null) return;
 
     // set doc content
-    doc.layers.setSingleLayer(new Layer(img));
+    Layer l=new Layer(img);
+    doc.layers.list.add(l);
+    doc.layers.activeIndex=doc.layers.indexOf(l);
 
     // reset view (optional)
     doc.view.zoom = 1.0;

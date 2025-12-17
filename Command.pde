@@ -40,6 +40,62 @@ class CommandManager {
   }
 }
 
+class AddLayerCommand implements Command{
+  Layer l;
+  int index;
+  AddLayerCommand(Document doc,Layer tar){
+    this.l=tar;
+  }
+  void execute(Document doc){
+    doc.layers.list.add(l);
+  }
+  void undo(Document doc){
+    int index=doc.layers.indexOf(l);
+    doc.layers.removeAt(index);
+  }
+  String name(){
+    return "Add Layer";
+  }
+}
+
+class RemoveLayerCommand implements Command{
+  Layer l=null;
+  int index;
+  RemoveLayerCommand(Document doc,Layer tar){
+    this.l=tar;
+    index=doc.layers.indexOf(l);
+  }
+  void execute(Document doc){
+  if (l == null) return;
+    doc.layers.removeAt(index);
+  }
+  void undo(Document doc){
+    doc.layers.insertAt(index,l);
+  }
+  String name(){
+    return "Remove Layer";
+  }
+}
+
+class MoveLayerCommand implements Command{
+  Layer l;
+  int start,end;
+  MoveLayerCommand(Document doc,int start,int end){
+    this.start=start;
+    this.end=end;
+    this.l=doc.layers.list.get(start);
+  }
+  void execute(Document doc){
+    doc.layers.move(start,end);
+  }
+  void undo(Document doc){
+    doc.layers.move(end,start);
+  }
+  String name(){
+    return "Move Layer";
+  }
+}
+
 class RotateCommand implements Command{
   Layer layer;
   float before,after;
