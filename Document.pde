@@ -1,5 +1,5 @@
 public class Document {
-  PGraphics canvas = createGraphics(1000, 800);
+  PGraphics canvas = createGraphics(2000, 2000);
   ViewState view = new ViewState();
   LayerStack layers = new LayerStack();
   RenderFlags renderFlags = new RenderFlags();
