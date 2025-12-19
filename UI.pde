@@ -16,10 +16,12 @@ class UI {
   boolean isUpdatingUI = false; // 新增：标记位，防止循环触发
   File lastExportDir;
 
-  UIButton btnOpen, btnMove, btnCrop, btnExport, btnUndo, btnRedo;
+  UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo;
   LayerListPanel layerListPanel;
 
-  JTextField fieldX, fieldY;
+  JTextField fieldX, fieldY, fieldText;
+  JComboBox<String> comboFont;
+  JSpinner spinnerFontSize;
   JPanel propsPanel;
 
   UI(PApplet parent, Document doc, App app) {
@@ -38,6 +40,8 @@ class UI {
     btnMove = new UIButton(x, y, w, h, "Move (M)");
     y += h + gap;
     btnCrop = new UIButton(x, y, w, h, "Crop (C)");
+    y += h + gap;
+    btnText = new UIButton(x, y, w, h, "Text (T)");
     y += h + gap;
     btnExport = new UIButton(x, y, w, h, "Export (E)");
     y += h + gap;
@@ -71,6 +75,7 @@ class UI {
     btnOpen.draw(false);
     btnMove.draw("Move".equals(tools.activeName()));
     btnCrop.draw("Crop".equals(tools.activeName()));
+    btnText.draw("Text".equals(tools.activeName())); // text tool shares active name slot
     btnExport.draw(false);
     btnUndo.draw(false);
     btnRedo.draw(false);
@@ -111,6 +116,10 @@ class UI {
       app.tools.setTool(new CropTool(app.history));
       return true;
     }
+    if (btnText.hit(mx, my)) {
+      createTextLayer();
+      return true;
+    }
     if (btnExport.hit(mx, my)) {
       exportCanvas();
       return true;
@@ -144,13 +153,25 @@ class UI {
     selectOutput("Export canvas (PNG)", "exportSelected", defaultExportFile());
   }
 
+  void createTextLayer() {
+    TextLayer tl = new TextLayer("Text", "SansSerif", 48, doc.layers.getid());
+    tl.name = "Text " + tl.ID;
+    tl.x = doc.viewW * 0.5 - tl.pivotX;
+    tl.y = doc.viewH * 0.5 - tl.pivotY;
+    int index = doc.layers.list.size();
+    app.history.perform(doc, new AddLayerCommand(tl, index));
+    doc.renderFlags.dirtyComposite = true;
+    layerListPanel.refresh(doc);
+    updatePropertiesFromLayer(tl);
+  }
+
   void onFileSelected(Document doc, File selection) {
     if (selection == null) return;
     PImage img = loadImage(selection.getAbsolutePath());
     if (img == null) return;
 
     Layer active = doc.layers.getActive();
-    boolean canReuseActive = active != null && active.empty;
+    boolean canReuseActive = active != null && active.empty&&active.types!="Text";
 
     if (canReuseActive) {
       active.img = img;
@@ -186,6 +207,19 @@ class UI {
     
     // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
     sliderOpacity.setValue((int)(l.opacity * 255));
+
+    boolean isText = (l instanceof TextLayer);
+    fieldText.setEnabled(isText);
+    comboFont.setEnabled(isText);
+    spinnerFontSize.setEnabled(isText);
+    if (isText) {
+      TextLayer tl = (TextLayer) l;
+      fieldText.setText(tl.text);
+      comboFont.setSelectedItem(tl.fontName);
+      spinnerFontSize.setValue(tl.fontSize);
+    } else {
+      fieldText.setText("");
+    }
     
     isUpdatingUI = false; 
   }
@@ -202,9 +236,39 @@ class UI {
       updatePropertiesFromLayer(active);
     }
   }
+
+  TextLayer getActiveTextLayer() {
+    Layer active = doc.layers.getActive();
+    if (active == null) return null;
+    if (!(active instanceof TextLayer)) return null;
+    return (TextLayer) active;
+  }
+
+  void updateTextFromUI() {
+    if (isUpdatingUI) return;
+    TextLayer tl = getActiveTextLayer();
+    if (tl == null) return;
+    app.history.perform(doc, new SetTextCommand(tl, fieldText.getText()));
+  }
+
+  void updateFontNameFromUI() {
+    if (isUpdatingUI) return;
+    TextLayer tl = getActiveTextLayer();
+    if (tl == null) return;
+    String value = (String) comboFont.getSelectedItem();
+    app.history.perform(doc, new SetFontNameCommand(tl, value));
+  }
+
+  void updateFontSizeFromUI() {
+    if (isUpdatingUI) return;
+    TextLayer tl = getActiveTextLayer();
+    if (tl == null) return;
+    int size = ((Number) spinnerFontSize.getValue()).intValue();
+    app.history.perform(doc, new SetFontSizeCommand(tl, size));
+  }
   void setupPropertiesPanel(JPanel container) {
-    // 1. 改为 3 行 2 列以容纳 X, Y, Opacity
-    propsPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+    // 属性：位置、透明度、文本
+    propsPanel = new JPanel(new GridLayout(6, 2, 5, 5));
     propsPanel.setBackground(new Color(60, 60, 60));
 
     // 初始化 X, Y 输入框
@@ -222,28 +286,49 @@ class UI {
     fieldX.addActionListener(e -> updateLayerFromUI());
     fieldY.addActionListener(e -> updateLayerFromUI());
     // --- 新增：透明度部分 ---
-  JLabel labelOp = new JLabel(" Opacity:");
-  labelOp.setForeground(Color.WHITE);
-  // 参数：最小值, 最大值, 当前值
-  sliderOpacity = new JSlider(0, 255, 255);
-  sliderOpacity.setBackground(new Color(60, 60, 60));
-  
-  // 监听滑动条
-  sliderOpacity.addChangeListener(e -> {
-    if (!sliderOpacity.getValueIsAdjusting()) { // 当玩家松开手指时执行命令
-      updateOpacityFromUI();
-    }
-  });
+    JLabel labelOp = new JLabel(" Opacity:");
+    labelOp.setForeground(Color.WHITE);
+    // 参数：最小值, 最大值, 当前值
+    sliderOpacity = new JSlider(0, 255, 255);
+    sliderOpacity.setBackground(new Color(60, 60, 60));
+    
+    // 文本相关
+    JLabel labelText = new JLabel(" Text:");
+    labelText.setForeground(Color.WHITE);
+    fieldText = new JTextField("");
 
-  propsPanel.add(labelX); propsPanel.add(fieldX);
-  propsPanel.add(labelY); propsPanel.add(fieldY);
-  propsPanel.add(labelOp); propsPanel.add(sliderOpacity); // 添加到面板
-  
-  container.add(propsPanel, BorderLayout.SOUTH);
-  
-  fieldX.addActionListener(e -> updateLayerFromUI());
-  fieldY.addActionListener(e -> updateLayerFromUI());
-}
+    JLabel labelFont = new JLabel(" Font:");
+    labelFont.setForeground(Color.WHITE);
+    String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
+    comboFont = new JComboBox<String>(fontOptions);
+
+    JLabel labelSize = new JLabel(" Size:");
+    labelSize.setForeground(Color.WHITE);
+    spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
+
+    // 监听滑动条
+    sliderOpacity.addChangeListener(e -> {
+      if (!sliderOpacity.getValueIsAdjusting()) { // 当玩家松开手指时执行命令
+        updateOpacityFromUI();
+      }
+    });
+
+    fieldText.addActionListener(e -> updateTextFromUI());
+    comboFont.addActionListener(e -> updateFontNameFromUI());
+    spinnerFontSize.addChangeListener(e -> updateFontSizeFromUI());
+
+    propsPanel.add(labelX); propsPanel.add(fieldX);
+    propsPanel.add(labelY); propsPanel.add(fieldY);
+    propsPanel.add(labelOp); propsPanel.add(sliderOpacity);
+    propsPanel.add(labelText); propsPanel.add(fieldText);
+    propsPanel.add(labelFont); propsPanel.add(comboFont);
+    propsPanel.add(labelSize); propsPanel.add(spinnerFontSize);
+    
+    container.add(propsPanel, BorderLayout.SOUTH);
+    
+    fieldX.addActionListener(e -> updateLayerFromUI());
+    fieldY.addActionListener(e -> updateLayerFromUI());
+  }
 // 从 UI 更新到图层
   void updateOpacityFromUI() {
   if (isUpdatingUI) return;

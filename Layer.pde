@@ -6,6 +6,7 @@ class Layer {
   float opacity = 1.0;
   boolean visible = true;
   String name = "Layer";
+  String types;
   //int id;
   // Transform in CANVAS space
   float x = 0;            // translation
@@ -38,6 +39,12 @@ class Layer {
     scale(scale);
     translate(-pivotX, -pivotY);
   }
+    void drawSelf(Document doc) {
+    if (img == null) return;
+    tint(255, 255 * opacity);
+    doc.canvas.image(img, -pivotX, -pivotY);
+    noTint();
+  }
 
   // ---------- Geometry helpers ----------
   // Pivot position in CANVAS space
@@ -50,13 +57,66 @@ class Layer {
 
 
 }
-/*
-class TextLayer extends Layer{
-  
-  TextLayer(){
 
+class TextLayer extends Layer{
+  String text="Text";
+  String fontName="SansSerif";
+  int fontSize=32;
+  int fillCol = color(255,0,0);      // colcor
+
+  PFont fontCache = null;
+  boolean metricsDirty = true;
+   // 👈 指定用哪个 Layer 构造器
+
+  TextLayer(String text,String fontName,int fontSize,int id){
+    super(null, id);  
+    this.text=text;
+    this.fontName=fontName;
+    this.fontSize=fontSize;
+    this.name="Text Layer "+"ID";
+    this.types="Text";
   }
-}*/
+
+
+  void ensureFont() {
+  if (fontCache == null) {
+    fontCache = createFont(fontName, fontSize, true);
+    }
+  }
+    void updateMetricsIfNeeded() {
+    if (!metricsDirty) return;
+    ensureFont();
+    textFont(fontCache);
+    textSize(fontSize);
+
+    float w = max(1, textWidth(text));
+    float h = max(1, textAscent() + textDescent());
+
+    pivotX = w * 0.5;
+    pivotY = h * 0.5;
+    metricsDirty = false;
+  }
+  void drawSelf(Document doc){
+    ensureFont();
+    updateMetricsIfNeeded();
+
+    float baseA = alpha(fillCol);
+    int a = int(baseA * opacity);
+    int c = color(red(fillCol), green(fillCol), blue(fillCol), a);
+
+    // Draw text directly onto the document canvas
+    doc.canvas.textFont(fontCache);
+    doc.canvas.textSize(fontSize);
+    doc.canvas.textAlign(LEFT, TOP);
+    doc.canvas.fill(c);
+    doc.canvas.text(text, -pivotX, -pivotY);
+  }
+
+  void setText(String s) { text = s; metricsDirty = true; }
+  void setFontSize(int s) { fontSize = max(1, s); fontCache = null; metricsDirty = true; }
+  void setFontName(String s) { fontName = s; fontCache = null; metricsDirty = true; }
+  void setFillCol(int c) { fillCol = c; }
+}
 class LayerStack {
   int NEXT_ID=1;
   ArrayList<Layer> list = new ArrayList<Layer>();

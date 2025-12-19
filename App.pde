@@ -86,6 +86,10 @@ public class App {
       tools.setTool(new CropTool(history));
       return;
     }
+    if (k=='t' || k=='T') {
+      ui.createTextLayer();
+      return;
+    }
     if (k=='e' || k=='E') {
       ui.exportCanvas();
       return;

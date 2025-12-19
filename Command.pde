@@ -292,3 +292,79 @@ class OpacityCommand implements Command {
 
   public String name() { return "Change Opacity"; }
 }
+
+// ---------- Text commands ----------
+class SetTextCommand implements Command {
+  TextLayer layer;
+  String before, after;
+
+  SetTextCommand(TextLayer layer, String newText) {
+    this.layer = layer;
+    this.before = layer.text;
+    this.after = newText;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.setText(after);
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.setText(before);
+    doc.markChanged();
+  }
+
+  public String name() { return "Set Text"; }
+}
+
+class SetFontNameCommand implements Command {
+  TextLayer layer;
+  String before, after;
+
+  SetFontNameCommand(TextLayer layer, String fontName) {
+    this.layer = layer;
+    this.before = layer.fontName;
+    this.after = fontName;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.setFontName(after);
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.setFontName(before);
+    doc.markChanged();
+  }
+
+  public String name() { return "Set Font Name"; }
+}
+
+class SetFontSizeCommand implements Command {
+  TextLayer layer;
+  int before, after;
+
+  SetFontSizeCommand(TextLayer layer, int size) {
+    this.layer = layer;
+    this.before = layer.fontSize;
+    this.after = size;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.setFontSize(after);
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.setFontSize(before);
+    doc.markChanged();
+  }
+
+  public String name() { return "Set Font Size"; }
+}

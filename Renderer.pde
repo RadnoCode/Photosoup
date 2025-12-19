@@ -24,7 +24,8 @@ class Renderer{
 
     for(int i=0;i<doc.layers.list.size();i++){
       Layer l=doc.layers.list.get(i);
-      if(l==null||l.visible==false||(l.img==null)){
+      // Skip empty entries and hidden layers. Allow text layers (img can be null).
+      if (l == null || !l.visible || (l.img == null && !(l instanceof TextLayer))) {
         continue;
       }
       pg.pushMatrix();
@@ -33,10 +34,11 @@ class Renderer{
       pg.translate(l.pivotX,l.pivotY);
       pg.rotate(l.rotation);
       pg.scale(l.scale);
-
-      pg.tint(255,255*l.opacity);
-      pg.image(l.img,-l.pivotX,-l.pivotY);
-      pg.noTint();
+      
+      //pg.tint(255,255*l.opacity);
+      //pg.image(l.img,-l.pivotX,-l.pivotY);
+      //pg.noTint();
+      l.drawSelf(doc);
       pg.popMatrix();
       
     }
