@@ -28,6 +28,7 @@ public class App {
    // placeholder for future updates
   }*/
   void render() {
+    renderer.drawChecker(doc,doc.viewW,doc.viewH,50);
     renderer.drawCanvas(doc, tools);
     renderer.drawToScreen(doc,tools);
     ui.draw(doc, tools, history);

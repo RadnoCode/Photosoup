@@ -4,15 +4,27 @@ class Renderer{
     // 默认构造方法为空，但是避免误认还是补充上了
   }
   
-  void drawChecker(int w, int h, int s) {
+  void drawChecker(Document doc,int w, int h, int s) {
+    pushMatrix();
+    doc.view.applyTransform();
     noStroke();
-    for (int y = 0; y+s <= h; y += s) {
-      for (int x = 0; x+s <= w; x += s) {
-        int v = ((x/s + y/s) % 2 == 0) ? 60 : 80;
+
+    // Tile only inside the cropped canvas region and clip to its bounds.
+    int minX = max(0, doc.viewX);
+    int minY = max(0, doc.viewY);
+    int maxX = min(doc.canvas.width, doc.viewX + w);
+    int maxY = min(doc.canvas.height, doc.viewY + h);
+
+    for (int y = minY; y < maxY; y += s) {
+      int tileH = min(s, maxY - y);
+      for (int x = minX; x < maxX; x += s) {
+        int tileW = min(s, maxX - x);
+        int v = (((x / s) + (y / s)) % 2 == 0) ? 60 : 80;
         fill(v);
-        rect(x, y, s, s);
+        rect(x, y, tileW, tileH);
       }
     }
+    popMatrix();
   }// 棋盘格
   void drawCanvas(Document doc,ToolManager tools){
     PGraphics pg=doc.canvas;

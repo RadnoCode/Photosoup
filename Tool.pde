@@ -177,7 +177,14 @@ class CropTool implements Tool {
 
   public void mousePressed(Document doc, int mx, int my, int btn) {
     if (btn != LEFT) return;
-    if (doc.layers.getActive() == null || doc.layers.getActive().img == null) return;
+    boolean act=true;
+    Layer l=doc.layers.getActive();
+    
+    if (l == null || l.img == null) {act=false;}
+    if(l.types=="Text"){
+      act=true;
+    }
+    if(!act) {return ;}
     dragging = true;
     
     startX = doc.view.screenToCanvasX(mx);
@@ -198,12 +205,11 @@ class CropTool implements Tool {
 
     endX = doc.view.screenToCanvasX(mx);
     endY = doc.view.screenToCanvasY(my);
-    int endW=(int)(endX-startX);
-    int endH=(int)(endY-startY);
-    IntRect r = buildClampedRect(doc, (int)startX,(int)startY, endX, endY);
+    IntRect r = buildClampedRect(doc, startX, startY, endX, endY);
     if (r == null || r.w < 2 || r.h < 2) return;
 
-    history.perform(doc, new CropCommand(doc,(int)startX,(int)startY,endW,endH));
+    // Use the clamped, positive-size rect for cropping to avoid negative widths/heights.
+    history.perform(doc, new CropCommand(doc, r.x, r.y, r.w, r.h));
   }
 
   public void mouseWheel(Document doc, float delta) {
