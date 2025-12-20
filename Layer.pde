@@ -41,9 +41,9 @@ class Layer {
   }
   void drawSelf(Document doc) {
     if (img == null) return;
-    tint(255, 255 * opacity);
+    doc.canvas.tint(255, 255 * opacity);
     doc.canvas.image(img, -pivotX, -pivotY);
-    noTint();
+    doc.canvas.noTint();
   }
 
   // ---------- Geometry helpers ----------

@@ -47,6 +47,10 @@ class LayerListPanel {
       int idx = list.getSelectedIndex();
       int docIdx = viewToDocIndex(idx);
       doc.layers.activeIndex = docIdx;
+      // keep the property panel in sync with the newly selected layer
+      if (app != null && app.ui != null) {
+        app.ui.updatePropertiesFromLayer(doc.layers.getActive());
+      }
     });
   
 

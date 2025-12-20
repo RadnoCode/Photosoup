@@ -26,7 +26,12 @@ class Renderer{
     }
     popMatrix();
   }// 棋盘格
+
+
   void drawCanvas(Document doc,ToolManager tools){
+    if (!doc.renderFlags.dirtyComposite) {
+      return;
+    }
     PGraphics pg=doc.canvas;
     pg.beginDraw();
     pg.clear();
@@ -57,6 +62,7 @@ class Renderer{
     pg.noClip();
 
     pg.endDraw();
+    doc.renderFlags.dirtyComposite = false;
   }
   void drawToScreen(Document doc,ToolManager tools){
     pushMatrix();
@@ -67,41 +73,6 @@ class Renderer{
 
 
   }
-  /*
-  void draw(Document doc, ToolManager tools) {
-    pushMatrix();
-    doc.view.applyTransform();
-
-    drawChecker(pg.width, pg.height, 20);
-
-    for(int i = 0; i < doc.layers.list.size(); i++){
-      Layer l=doc.layers.list.get(i);
-      if(l==null||l.img==null||l.visible==false){
-        continue;
-      }
-      pushMatrix();
-      l.applyTransform();
-      tint(255, (int)(255 * l.opacity));// 强制类型转换防止语法歧义，并确保分号正确
-      image(l.img, 0, 0);
-      noTint();
-      popMatrix();
-    }
-
-    // canvas border
-    noFill();
-    stroke(200);
-    rect(0, 0, pg.width, pg.height);
-
-    // tool overlay in canvas coords
-    tools.drawOverlay(doc);
-
-    popMatrix();
-
-    // tiny hint
-    fill(200);
-    textSize(12);
-    text("Shortcuts: O Open | M Move | C Crop | Ctrl/Cmd+Z Undo | Ctrl/Cmd+Y Redo", 12, height - 12);
-  }*/
 }
 
 

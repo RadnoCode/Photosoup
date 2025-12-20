@@ -2,13 +2,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 class UI {
-  App app;      // 持有对 App 的引用
+  App app;
 
-  JSlider sliderOpacity; // 滑动条
-  
+
+
   PApplet parent;
   Document doc;
-  
+
   int RightpanelW = 270;
   int RightpanelX = width-RightpanelW;
   int LeftPannelW = 64;
@@ -19,10 +19,12 @@ class UI {
   UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo;
   LayerListPanel layerListPanel;
 
+
   JTextField fieldX, fieldY, fieldText;
   JComboBox<String> comboFont;
   JSpinner spinnerFontSize;
   JPanel propsPanel;
+  JSlider sliderOpacity;
 
   UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
@@ -69,7 +71,7 @@ class UI {
     noStroke();
     fill(45);
     rect(RightpanelX, 0, RightpanelW, height);
-    rect(0,0,LeftPannelW,height);
+    rect(0, 0, LeftPannelW, height);
 
     // buttons
     btnOpen.draw(false);
@@ -87,13 +89,34 @@ class UI {
     text("X-axis: " + /*history.undoCount()*/mouseX, RightpanelX + 12, height - 50);
     text("Y-axis: " + /*history.redoCount()*/mouseY, RightpanelX + 12, height - 30);
 
-    if (doc.layers.getActive() == null || doc.layers.getActive().img == null) {
+    // 隐藏/重置属性面板
+    Layer active = doc.layers.getActive();
+    // 核心逻辑：如果没有活跃图层，隐藏 Java Swing 的属性面板
+    if (active == null) {
+      if (propsPanel != null && propsPanel.isVisible()) {
+        propsPanel.setVisible(false); // 隐藏面板
+      }
+      // 可以在原本显示属性的地方画一些提示文字
+      fill(100);
+      textSize(12);
+      text("Select a layer to edit properties", RightpanelX + 12, layerListPanel.topY - 20);
+    } else {
+      if (propsPanel != null && !propsPanel.isVisible()) {
+        propsPanel.setVisible(true); // 重新显示面板
+      }
+    }
+
+    if (doc.layers.getActive() == null) {
       fill(255, 160, 160);
-      text("No image loaded.", RightpanelX + 12, height - 95);
+      text("No layer selected.", RightpanelX + 12, height - 95);
     } else {
       fill(180);
       Layer a = doc.layers.getActive();
-      text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
+      if (a.img != null) {
+        text("Image: " + a.img.width + "x" + a.img.height, RightpanelX + 12, height - 95);
+      } else {
+        text("Text layer selected", RightpanelX + 12, height - 95);
+      }
     }
 
     // layerListPanel.refresh(doc);我把这一行代码注释掉进行调试
@@ -146,6 +169,7 @@ class UI {
     return false;
   }
 
+  // *******File Opening*******
   void openFileDialog() {
     selectInput("Select an image", "fileSelected");
   }
@@ -195,15 +219,18 @@ class UI {
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);
   }
+
+
+
   void updatePropertiesFromLayer(Layer l) {
     if (l == null || fieldX == null || sliderOpacity == null) return;
-    
-    isUpdatingUI = true; 
-    
+
+    isUpdatingUI = true;
+
     // 同步坐标
     fieldX.setText(String.valueOf((int)l.x));
     fieldY.setText(String.valueOf((int)l.y));
-    
+
     // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
     sliderOpacity.setValue((int)(l.opacity * 255));
 
@@ -219,19 +246,43 @@ class UI {
     } else {
       fieldText.setText("");
     }
-    
-    isUpdatingUI = false; 
+
+    if (l == null) {
+      if (propsPanel != null) {
+        propsPanel.setVisible(false); // 隐藏面板
+      }
+      return;
+    }
+
+    // 如果有图层，确保面板可见并更新数值
+    if (propsPanel != null) {
+      propsPanel.setVisible(true);
+    }
+
+    isUpdatingUI = true;
+    if (fieldX != null) fieldX.setText(String.valueOf((int)l.x));
+    if (fieldY != null) fieldY.setText(String.valueOf((int)l.y));
+    if (sliderOpacity != null) {
+      sliderOpacity.setValue((int)(l.opacity * 255));
+    }
+
+    isUpdatingUI = false;
   }
 
+
+
   void updateLayerFromUI() {
-    if (isUpdatingUI) return; // 如果是程序自动填写的，不要执行移动指令
+    if (isUpdatingUI) return;
     Layer active = doc.layers.getActive();
     if (active == null) return;
     try {
       float nx = Float.parseFloat(fieldX.getText());
       float ny = Float.parseFloat(fieldY.getText());
-      app.history.perform(doc, new MoveCommand(active, nx, ny));
-    } catch (Exception e) {
+      float ns = active.scale; // keep current scale
+      float nr = active.rotation; // keep current rotation
+        app.history.perform(doc, new TransformCommand(active, nx, ny,ns,nr));
+    }
+    catch (Exception e) {
       updatePropertiesFromLayer(active);
     }
   }
@@ -274,13 +325,13 @@ class UI {
     JLabel labelX = new JLabel(" X:");
     labelX.setForeground(Color.WHITE);
     fieldX = new JTextField("0");
-    
+
     JLabel labelY = new JLabel(" Y:");
     labelY.setForeground(Color.WHITE);
     fieldY = new JTextField("0");
-    
+
     container.add(propsPanel, BorderLayout.SOUTH);
-    
+
     // 监听回车
     fieldX.addActionListener(e -> updateLayerFromUI());
     fieldY.addActionListener(e -> updateLayerFromUI());
@@ -290,7 +341,7 @@ class UI {
     // 参数：最小值, 最大值, 当前值
     sliderOpacity = new JSlider(0, 255, 255);
     sliderOpacity.setBackground(new Color(60, 60, 60));
-    
+
     // 文本相关
     JLabel labelText = new JLabel(" Text:");
     labelText.setForeground(Color.WHITE);
@@ -310,34 +361,48 @@ class UI {
       if (!sliderOpacity.getValueIsAdjusting()) { // 当玩家松开手指时执行命令
         updateOpacityFromUI();
       }
-    });
+    }
+    );
 
     fieldText.addActionListener(e -> updateTextFromUI());
     comboFont.addActionListener(e -> updateFontNameFromUI());
     spinnerFontSize.addChangeListener(e -> updateFontSizeFromUI());
 
-    propsPanel.add(labelX); propsPanel.add(fieldX);
-    propsPanel.add(labelY); propsPanel.add(fieldY);
-    propsPanel.add(labelOp); propsPanel.add(sliderOpacity);
-    propsPanel.add(labelText); propsPanel.add(fieldText);
-    propsPanel.add(labelFont); propsPanel.add(comboFont);
-    propsPanel.add(labelSize); propsPanel.add(spinnerFontSize);
-    
+    propsPanel.add(labelX);
+    propsPanel.add(fieldX);
+    propsPanel.add(labelY);
+    propsPanel.add(fieldY);
+    propsPanel.add(labelOp);
+    propsPanel.add(sliderOpacity);
+    propsPanel.add(labelText);
+    propsPanel.add(fieldText);
+    propsPanel.add(labelFont);
+    propsPanel.add(comboFont);
+    propsPanel.add(labelSize);
+    propsPanel.add(spinnerFontSize);
+
     container.add(propsPanel, BorderLayout.SOUTH);
-    
+
     fieldX.addActionListener(e -> updateLayerFromUI());
     fieldY.addActionListener(e -> updateLayerFromUI());
   }
+
+
+
   // 从 UI 更新到图层
   void updateOpacityFromUI() {
-  if (isUpdatingUI) return;
-  Layer active = doc.layers.getActive();
-  if (active == null) return;
+    if (isUpdatingUI) return;
+    Layer active = doc.layers.getActive();
+    if (active == null) return;
 
-  float newOp = sliderOpacity.getValue();
-  app.history.perform(doc, new OpacityCommand(active, newOp));
-}
+    float newOp = sliderOpacity.getValue();
+    app.history.perform(doc, new OpacityCommand(active, newOp));
+  }
 
+
+
+
+  // *******Exporting*******
   File defaultExportFile() {
     return new File(lastExportDir, defaultExportName());
   }
@@ -375,10 +440,10 @@ class UI {
       "已导出到：\n" + path,
       "Export Completed",
       JOptionPane.INFORMATION_MESSAGE
-    );
+      );
   }
 }
-  
+
 
 
 
@@ -386,7 +451,7 @@ class UI {
 class UIButton {
   int x, y, w, h;
   String label;
-  
+
   UIButton(int x, int y, int w, int h, String label) {
     this.x=x;
     this.y=y;

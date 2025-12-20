@@ -62,7 +62,9 @@ class AddLayerCommand implements Command {
     doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Add Layer"; }
+  public String name() {
+    return "Add Layer";
+  }
 }
 
 
@@ -88,7 +90,9 @@ class RemoveLayerCommand implements Command {
     doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Remove Layer"; }
+  public String name() {
+    return "Remove Layer";
+  }
 }
 
 class ToggleVisibleCommand implements Command {
@@ -111,7 +115,9 @@ class ToggleVisibleCommand implements Command {
     doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Toggle Visibility"; }
+  public String name() {
+    return "Toggle Visibility";
+  }
 }
 
 
@@ -126,7 +132,6 @@ class MoveLayerCommand implements Command {
   }
 
   public void execute(Document doc) {
-    // 保险：执行时再找一次 layer 当前 index，避免外界变动
     int cur = doc.layers.indexOf(layer);
     println("cur"+cur);
     if (cur < 0) return;
@@ -143,7 +148,9 @@ class MoveLayerCommand implements Command {
     doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Move Layer"; }
+  public String name() {
+    return "Move Layer";
+  }
 }
 
 class RenameLayerCommand implements Command {
@@ -156,65 +163,80 @@ class RenameLayerCommand implements Command {
     this.after  = afterName;
   }
 
-  public void execute(Document doc) { layer.name = after; }
-  public void undo(Document doc) { layer.name = before; }
-  public String name() { return "Rename Layer"; }
+  public void execute(Document doc) {
+    layer.name = after;
+  }
+  public void undo(Document doc) {
+    layer.name = before;
+  }
+  public String name() {
+    return "Rename Layer";
+  }
 }
 
 
-class RotateCommand implements Command{
+class RotateCommand implements Command {
   Layer layer;
-  float before,after;
-  RotateCommand(Layer tar,float befA,float aftA){
+  float before, after;
+  RotateCommand(Layer tar, float befA, float aftA) {
     layer = tar;
     before = befA;
     after = aftA;
   }
-  void execute(Document doc){
+  void execute(Document doc) {
     layer.rotation=after;
-    println("rotation: "+after);
+    doc.renderFlags.dirtyComposite = true;
+    //println("rotation: "+after);
   }
-  void undo(Document doc){
+  void undo(Document doc) {
     layer.rotation=before;
+    doc.renderFlags.dirtyComposite = true;
   }
-  String name(){
+  String name() {
     return "Rotate";
   }
-
 }
 
-class ScaleCommand implements Command{
+class ScaleCommand implements Command {
   Layer target;
-  float before,after;
-  ScaleCommand(Layer tar,float befS,float aftS){
+  float before, after;
+  ScaleCommand(Layer tar, float befS, float aftS) {
     target=tar;
     before=befS;
     after=aftS;
   }
-  void execute(Document doc){
+  void execute(Document doc) {
     target.scale=after;
+    doc.renderFlags.dirtyComposite=true;
   }
-  void undo(Document doc){
+  void undo(Document doc) {
     target.scale=before;
+    doc.renderFlags.dirtyComposite=true;
   }
-  String name(){
+  String name() {
     return"Scale";
   }
 }
 
 // ---------- CropCommand (stoIndexres before snapshot for undo) ----------
 class CropCommand implements Command {
-  int x,y,w,h;
-  int befx,befy,befw,befh;
+  int x, y, w, h;
+  int befx, befy, befw, befh;
 
 
-  CropCommand(Document doc,int x,int y,int w,int h) {
-    this.x=x;this.y=y;this.w=w;this.h=h;
-    this.befx=doc.viewX;this.befy=doc.viewY;this.befw=doc.viewW;this.befh=doc.viewH;
+  CropCommand(Document doc, int x, int y, int w, int h) {
+    this.x=x;
+    this.y=y;
+    this.w=w;
+    this.h=h;
+    this.befx=doc.viewX;
+    this.befy=doc.viewY;
+    this.befw=doc.viewW;
+    this.befh=doc.viewH;
   }
 
   public void execute(Document doc) {
-    if(x<befx||y<befy||x+w>befx+befw||y+h>befy+befh) return ;// Todo: warning for illeagal 
+    if (x<befx||y<befy||x+w>befx+befw||y+h>befy+befh) return ;// Todo: warning for illeagal
 
     // apply crop
     doc.viewX=x;
@@ -245,9 +267,9 @@ class MoveCommand implements Command {
 
   MoveCommand(Layer l, float nx, float ny) {
     this.target = l;
-    this.oldX = l.x; 
+    this.oldX = l.x;
     this.oldY = l.y;
-    this.newX = nx;  
+    this.newX = nx;
     this.newY = ny;
   }
 
@@ -263,10 +285,50 @@ class MoveCommand implements Command {
     doc.markChanged();
   }
 
-  public String name() { 
-    return "Manual Move"; 
+  public String name() {
+    return "Manual Move";
   }
 }
+
+
+class TransformCommand implements Command {
+  Layer target;
+  float oldX, oldY, oldScale, oldRotation;
+  float newX, newY, newScale, newRotation;
+
+  TransformCommand(Layer l, float nx, float ny, float ns, float nr) {
+    this.target = l;
+    this.oldX = l.x;
+    this.oldY = l.y;
+    this.oldScale = l.scale;
+    this.oldRotation = l.rotation;
+    this.newX = nx;
+    this.newY = ny;
+    this.newScale = ns;
+    this.newRotation = nr;
+  }
+
+  public void execute(Document doc) {
+    target.x = newX;
+    target.y = newY;
+    target.scale = newScale;
+    target.rotation = newRotation;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    target.x = oldX;
+    target.y = oldY;
+    target.scale = oldScale;
+    target.rotation = oldRotation;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Transform";
+  }
+}
+
 
 class OpacityCommand implements Command {
   Layer target;
@@ -281,7 +343,6 @@ class OpacityCommand implements Command {
 
   public void execute(Document doc) {
     target.opacity = newOp;
-    // 关键：通知渲染器画面已脏，需要重新合成
     doc.renderFlags.dirtyComposite = true;
   }
 
@@ -290,7 +351,9 @@ class OpacityCommand implements Command {
     doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Change Opacity"; }
+  public String name() {
+    return "Change Opacity";
+  }
 }
 
 // ---------- Text commands ----------
@@ -307,16 +370,18 @@ class SetTextCommand implements Command {
   public void execute(Document doc) {
     if (layer == null) return;
     layer.setText(after);
-    doc.markChanged();
+    doc.renderFlags.dirtyComposite = true;
   }
 
   public void undo(Document doc) {
     if (layer == null) return;
     layer.setText(before);
-    doc.markChanged();
+    doc.renderFlags.dirtyComposite = true;
   }
 
-  public String name() { return "Set Text"; }
+  public String name() {
+    return "Set Text";
+  }
 }
 
 class SetFontNameCommand implements Command {
@@ -341,7 +406,9 @@ class SetFontNameCommand implements Command {
     doc.markChanged();
   }
 
-  public String name() { return "Set Font Name"; }
+  public String name() {
+    return "Set Font Name";
+  }
 }
 
 class SetFontSizeCommand implements Command {
@@ -366,5 +433,7 @@ class SetFontSizeCommand implements Command {
     doc.markChanged();
   }
 
-  public String name() { return "Set Font Size"; }
+  public String name() {
+    return "Set Font Size";
+  }
 }
