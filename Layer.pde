@@ -39,7 +39,7 @@ class Layer {
     scale(scale);
     translate(-pivotX, -pivotY);
   }
-    void drawSelf(Document doc) {
+  void drawSelf(Document doc) {
     if (img == null) return;
     tint(255, 255 * opacity);
     doc.canvas.image(img, -pivotX, -pivotY);
@@ -60,20 +60,20 @@ class Layer {
 
 class TextLayer extends Layer{
   String text="Text";
-  String fontName="SansSerif";
+  String fontName="Arial";
   int fontSize=32;
   int fillCol = color(255,0,0);      // colcor
 
   PFont fontCache = null;
   boolean metricsDirty = true;
-   // 👈 指定用哪个 Layer 构造器
 
   TextLayer(String text,String fontName,int fontSize,int id){
     super(null, id);  
     this.text=text;
     this.fontName=fontName;
     this.fontSize=fontSize;
-    this.name="Text Layer "+"ID";
+    this.name="Text "+ID;
+
     this.types="Text";
   }
 
@@ -117,6 +117,10 @@ class TextLayer extends Layer{
   void setFontName(String s) { fontName = s; fontCache = null; metricsDirty = true; }
   void setFillCol(int c) { fillCol = c; }
 }
+
+
+
+
 class LayerStack {
   int NEXT_ID=1;
   ArrayList<Layer> list = new ArrayList<Layer>();
@@ -136,6 +140,7 @@ class LayerStack {
     for (int i = 0; i < list.size(); i++) if (list.get(i).ID == id) return i;
     return -1;
   }
+
 
   void insertAt(int idx, Layer l){
     idx = constrain(idx, 0, list.size());
@@ -180,9 +185,5 @@ class LayerStack {
     tar.name = s;
   }
 
-  void setSingleLayer(Layer layer) {
-    list.clear();
-    list.add(layer);
-    activeIndex = 0;
-  }
+
 }

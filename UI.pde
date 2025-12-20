@@ -154,11 +154,10 @@ class UI {
   }
 
   void createTextLayer() {
-    TextLayer tl = new TextLayer("Text", "SansSerif", 48, doc.layers.getid());
-    tl.name = "Text " + tl.ID;
+    TextLayer tl = new TextLayer("Text", "Arial", 48, doc.layers.getid());
+    int index = doc.layers.indexOf(doc.layers.getActive()) + 1;
     tl.x = doc.viewW * 0.5 - tl.pivotX;
     tl.y = doc.viewH * 0.5 - tl.pivotY;
-    int index = doc.layers.list.size();
     app.history.perform(doc, new AddLayerCommand(tl, index));
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);
@@ -329,7 +328,7 @@ class UI {
     fieldX.addActionListener(e -> updateLayerFromUI());
     fieldY.addActionListener(e -> updateLayerFromUI());
   }
-// 从 UI 更新到图层
+  // 从 UI 更新到图层
   void updateOpacityFromUI() {
   if (isUpdatingUI) return;
   Layer active = doc.layers.getActive();

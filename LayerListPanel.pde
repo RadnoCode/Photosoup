@@ -27,6 +27,7 @@ class LayerListPanel {
     refresh(doc);
   }
 
+
   void configureList() {
     list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -39,6 +40,8 @@ class LayerListPanel {
     list.setBackground(new Color(55, 55, 55));
     list.setForeground(Color.WHITE);
     list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
+
+    //select active layers
     list.addListSelectionListener(e -> {
       if (isRefreshing || e.getValueIsAdjusting()) return;
       int idx = list.getSelectedIndex();
@@ -46,7 +49,7 @@ class LayerListPanel {
       doc.layers.activeIndex = docIdx;
     });
   
-    
+
     // 鼠标：点眼睛 toggle；双击名字 rename
     list.addMouseListener(new MouseAdapter() {
       public void mousePressed(java.awt.event.MouseEvent e) {
@@ -81,12 +84,30 @@ class LayerListPanel {
 
 
     // Delete：用 Swing Key Binding（别用 processing.event.KeyEvent）
+    list.addMouseListener(new java.awt.event.MouseAdapter() {
+      public void mousePressed(java.awt.event.MouseEvent e) {
+        list.requestFocusInWindow();
+      }
+    });
+
+
+
+
+
     InputMap im = list.getInputMap(JComponent.WHEN_FOCUSED);
     ActionMap am = list.getActionMap();
+    int PRIMARY = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx(); // Ctrl on Win/Linux, Cmd on macOS
     im.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_DELETE, 0), "deleteLayer");
+    im.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_BACK_SPACE, PRIMARY), "deleteLayer");
+    im.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T,0), "addTextLayer");
     am.put("deleteLayer", new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
         deleteSelectedLayer();
+      }
+    });
+    am.put("addTextLayer", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        addTextLayer();
       }
     });
 
@@ -95,18 +116,7 @@ class LayerListPanel {
     scrollPane.getViewport().setBackground(new Color(45, 45, 45));
     scrollPane.setBackground(new Color(45, 45, 45));
 
-    // 添加列表选择监听
-  list.addListSelectionListener(e -> {
-    if (!e.getValueIsAdjusting()) { // 避免点击过程中触发两次
-      Layer selected = list.getSelectedValue();
-      if (selected != null) {
-        // 更新文档的当前激活索引
-        doc.layers.activeIndex = list.getSelectedIndex();
-        // 关键：调用 UI 的更新方法
-        app.ui.updatePropertiesFromLayer(selected);
-      }
-    }
-  });
+
   }
 
   void configureHeader() {
@@ -135,6 +145,8 @@ class LayerListPanel {
     frame.getLayeredPane().setLayout(null);
   }
 
+
+
   void updateLayout(int rightPanelX, int panelWidth, int parentHeight) {
     this.rightPanelX = rightPanelX;
     this.panelWidth = panelWidth;
@@ -144,6 +156,7 @@ class LayerListPanel {
     container.revalidate();
   }
 
+  // rebuild the layer list from Document
   void refresh(Document updatedDoc) {
     this.doc = updatedDoc;
     isRefreshing = true;
@@ -160,6 +173,14 @@ class LayerListPanel {
     isRefreshing = false;
   }
 
+
+  boolean isFocusInside() {
+    Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+    return focus != null && SwingUtilities.isDescendingFrom(focus, container);
+  }
+
+
+
   void addBlankLayer() {
     PImage blank = parent.createImage(doc.canvas.width, doc.canvas.height, ARGB);
     blank.loadPixels();
@@ -169,10 +190,21 @@ class LayerListPanel {
     newLayer.name = "Layer " + (doc.layers.list.size() + 1);
     int index = doc.layers.list.size();
     app.history.perform(doc, new AddLayerCommand(newLayer, index));
+    doc.layers.activeIndex = viewToDocIndex(index);
     doc.renderFlags.dirtyComposite = true;
     refresh(doc);
   }
 
+  void addTextLayer() {
+    int idx=doc.layers.indexOf(doc.layers.getActive())+1;
+    TextLayer tl=new TextLayer("New Text","Arial",32,doc.layers.getid());
+    tl.x = doc.viewW * 0.5 - tl.pivotX;
+    tl.y = doc.viewH * 0.5 - tl.pivotY;
+    app.history.perform(doc, new AddLayerCommand(tl, idx));
+    doc.layers.activeIndex = viewToDocIndex(idx);
+    doc.renderFlags.dirtyComposite = true;
+    refresh(doc);
+  }
   void deleteSelectedLayer() {
     Layer layer = list.getSelectedValue();
     if (layer == null) return;
@@ -182,7 +214,7 @@ class LayerListPanel {
     refresh(doc);
   }
 
-    class ReorderHandler extends TransferHandler {
+  class ReorderHandler extends TransferHandler {
     int sourceIndex = -1;
 
     public int getSourceActions(JComponent c) { return MOVE; }
@@ -190,7 +222,7 @@ class LayerListPanel {
     protected Transferable createTransferable(JComponent c) {
       sourceIndex = list.getSelectedIndex();
       Layer layer = list.getSelectedValue();
-      println("起点："+sourceIndex);
+      //println("起点："+sourceIndex);
       return new StringSelection(layer == null ? "" : ("" + layer.ID));
     }
 
@@ -203,12 +235,11 @@ class LayerListPanel {
       int target = dl.getIndex();
 
       if (target < 0) target = model.getSize();
-      // 夹紧到 [0, size]
+      // to [0, size]
       target = Math.max(0, Math.min(target, model.getSize()));
-      // 从前往后拖：移除 source 后插入点左移 1
       if (target > sourceIndex) target--;
 
-      println(sourceIndex+" "+target);
+      //println(sourceIndex+" "+target);
 
       Layer layer = model.getElementAt(sourceIndex);
 
@@ -254,17 +285,21 @@ class LayerListPanel {
     }
 
     public Component getListCellRendererComponent(
-      JList<? extends Layer> list, Layer layer, int index,
-      boolean isSelected, boolean cellHasFocus
-    ) {
-      eyeLabel.setText(layer.visible ? "👁" : "×");
-      nameLabel.setText(layer.name);
-      indexLabel.setText(String.valueOf(doc.layers.indexOf(layer)));
+      JList<? extends Layer> list, 
+      Layer layer, 
+      int index,
+      boolean isSelected, 
+      boolean cellHasFocus
+    )
+    {
+        eyeLabel.setText(layer.visible ? "👁" : "×");
+        nameLabel.setText(layer.name);
+        indexLabel.setText(String.valueOf(doc.layers.indexOf(layer)));
 
-      Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
-      setBackground(bg);
+        Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
+        setBackground(bg);
 
-      return this;
+        return this;
     }
   }
 

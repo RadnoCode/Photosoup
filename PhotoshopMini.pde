@@ -4,6 +4,8 @@ import java.awt.datatransfer.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import processing.awt.PSurfaceAWT;
+import javax.swing.text.*;
+
 
 App app;
 

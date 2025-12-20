@@ -5,6 +5,7 @@ public class App {
   CommandManager history;
   UI ui;
 
+
   
   /* 五大模块
     Doc：工程文件的唯一真实记录，
@@ -59,24 +60,32 @@ public class App {
   }
 
   void onKeyPressed(char k) {
-    boolean ctrl = (keyEvent.isMetaDown() || keyEvent.isControlDown());
+    boolean primary = keyEvent.isControlDown() || keyEvent.isMetaDown();
+    boolean shift   = keyEvent.isShiftDown();
+    boolean alt     = keyEvent.isAltDown();
+    Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+    
+  //Handle focus
 
-    if (ctrl && (k=='z' || k=='Z')) {
+    // When typing in a text field, ignore shortcuts.
+    if(focus != null && (focus instanceof JTextComponent)) {
+      return;
+    }
+
+
+    if (primary && (k=='z' || k=='Z')) {
       history.undo(doc);
       return;
     }
-    if (ctrl && (k=='y' || k=='Y')) {
+    if (primary && shift&&(k=='z' || k=='Z')) {
       history.redo(doc);
       return;
     }
-    
-    if(k==DELETE||(ctrl&&(k==BACKSPACE))||k==BACKSPACE){
-      ui.layerListPanel.deleteSelectedLayer();
-      return;
-    }
-
     if (k=='o' || k=='O') {
       ui.openFileDialog();
+      return;
+    }
+    if (ui != null && ui.layerListPanel != null && ui.layerListPanel.isFocusInside()) {
       return;
     }
     if (k=='m' || k=='M') {
@@ -85,10 +94,6 @@ public class App {
     }
     if (k=='c' || k=='C') {
       tools.setTool(new CropTool(history));
-      return;
-    }
-    if (k=='t' || k=='T') {
-      ui.createTextLayer();
       return;
     }
     if (k=='e' || k=='E') {
