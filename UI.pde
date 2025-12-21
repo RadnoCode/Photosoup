@@ -9,9 +9,9 @@ class UI {
   PApplet parent;
   Document doc;
 
-  int RightpanelW = 360;
+  int RightpanelW = 340;
   int RightpanelX = width-RightpanelW;
-  int LeftPannelW = 64;
+  int LeftPannelW = 80;
 
   File lastExportDir;
 
@@ -32,25 +32,25 @@ class UI {
     int h = 28;
     int gap = 10;
 
-    btnOpen = new UIButton(x, y, w, h, "(O)");
+    btnOpen = new UIButton(x, y, w, h, "Open");
     y += h + gap;
-    btnMove = new UIButton(x, y, w, h, "(M)");
+    btnMove = new UIButton(x, y, w, h, "Move");
     y += h + gap;
-    btnCrop = new UIButton(x, y, w, h, "(C)");
+    btnCrop = new UIButton(x, y, w, h, "Crop");
     y += h + gap;
-    btnText = new UIButton(x, y, w, h, "(T)");
+    btnText = new UIButton(x, y, w, h, "Text");
     y += h + gap;
-    btnExport = new UIButton(x, y, w, h, "(E)");
+    btnExport = new UIButton(x, y, w, h, "Export");
     y += h + gap;
-    btnUndo = new UIButton(x, y, w, h, "(U)");
+    btnUndo = new UIButton(x, y, w, h, "Undo");
     y += h + gap;
-    btnRedo = new UIButton(x, y, w, h, "(R)");
+    btnRedo = new UIButton(x, y, w, h, "Redo");
     y += h + gap;
-    btnBlur = new UIButton(x, y, w, h, "(B)");
+    btnBlur = new UIButton(x, y, w, h, "Blur");
     y += h + gap;
-    btnCon = new UIButton(x, y, w, h, "(Con)");
+    btnCon = new UIButton(x, y, w, h, "Contrast");
     y += h + gap;
-    btnSharpen = new UIButton(x, y, w, h, "(Sharp)");
+    btnSharpen = new UIButton(x, y, w, h, "Sharp");
     y += h + gap;
 
     //初始化图层面板
@@ -68,6 +68,7 @@ class UI {
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
+    RightpanelX = width - RightpanelW;
 
     rect(0, 0, LeftPannelW, height);
     
@@ -103,6 +104,9 @@ class UI {
       if (propertiesPanel != null) {
         propertiesPanel.setVisible(true);
       }
+    }
+    if (propertiesPanel != null) {
+      propertiesPanel.setPreferredHeight(height / 2);
     }
 
     if (doc.layers.getActive() == null) {

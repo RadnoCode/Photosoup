@@ -15,11 +15,15 @@ public class App {
     CommandManger：管理Command记录，发出更改Doc的指令
    */
   App(PApplet parent) {
-    doc = new Document();
+    this(parent, new Document());
+  }
+
+  App(PApplet parent, Document doc) {
+    this.doc = doc != null ? doc : new Document();
     renderer = new Renderer();
     tools = new ToolManager();
     history = new CommandManager();
-    ui = new UI(parent, doc, this);
+    ui = new UI(parent, this.doc, this);
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
   }// 生成函数，新建五大模块

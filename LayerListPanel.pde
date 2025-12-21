@@ -124,10 +124,13 @@ class LayerListPanel {
   }
 
   void configureHeader() {
-    JPanel header = new JPanel(new BorderLayout());
+    JPanel header = new JPanel(new BorderLayout(10, 10));
     header.setOpaque(false);
+    header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     JLabel label = new JLabel("Layers");
-    label.setForeground(Color.WHITE);
+    label.setForeground(new Color(60,60,60));
+    label.setFont(new Font("SansSerif", Font.BOLD, 20));
+
 
     addButton.setMargin(new Insets(2, 8, 2, 8));
     addButton.addActionListener(e -> addBlankLayer());
@@ -154,8 +157,8 @@ class LayerListPanel {
   void updateLayout(int rightPanelX, int panelWidth, int parentHeight) {
     this.rightPanelX = rightPanelX;
     this.panelWidth = panelWidth;
-    int margin = 10;
-    int availableHeight = Math.max(120, parentHeight - topY - 30);
+    int margin = 0;
+    int availableHeight = Math.max(120, parentHeight - topY);
     container.setBounds(rightPanelX + margin, topY, panelWidth - margin * 2, availableHeight);
     container.revalidate();
   }

@@ -4,6 +4,8 @@ class PropertiesPanel {
   Document doc;
   App app;
 
+  final Dimension labelSize = new Dimension(120, 24);
+
   Layer activeLayer;
   boolean isUpdating = false;
 
@@ -11,14 +13,14 @@ class PropertiesPanel {
   JTabbedPane tabs;
 
   // Transform controls
-  ScrollablePanel transformContent;
+  JPanel transformContent;
   JTextField fieldX, fieldY, fieldRotation, fieldScale, fieldOpacity, fieldText;
   JSlider sliderX, sliderY, sliderRotation, sliderScale, sliderOpacity;
   JComboBox<String> comboFont;
   JSpinner spinnerFontSize;
 
   // Filter controls
-  ScrollablePanel filterContent;
+  JPanel filterContent;
 
   PropertiesPanel(PApplet parent, Document doc, App app, JPanel hostContainer) {
     this.parent = parent;
@@ -32,7 +34,7 @@ class PropertiesPanel {
   void buildUI() {
     root = new JPanel(new BorderLayout());
     root.setOpaque(false);
-    root.setPreferredSize(new Dimension(260, 260));
+    root.setPreferredSize(new Dimension(300, 300));
 
     tabs = new JTabbedPane();
     tabs.setBackground(new Color(50, 50, 50));
@@ -46,7 +48,7 @@ class PropertiesPanel {
   }
 
   void buildTransformTab() {
-    transformContent = new ScrollablePanel();
+    transformContent = new JPanel();
     transformContent.setLayout(new BoxLayout(transformContent, BoxLayout.Y_AXIS));
     transformContent.setBackground(new Color(60, 60, 60));
     transformContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -84,8 +86,6 @@ class PropertiesPanel {
     textPanel.setLayout(new GridLayout(3, 2, 6, 6));
     textPanel.setOpaque(false);
     textPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), "Text"));
-    textPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    textPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, textPanel.getPreferredSize().height));
 
     JLabel labelText = makeLabel("Text");
     fieldText = new JTextField("", 10);
@@ -121,7 +121,7 @@ class PropertiesPanel {
   }
 
   void buildFilterTab() {
-    filterContent = new ScrollablePanel();
+    filterContent = new JPanel();
     filterContent.setLayout(new BoxLayout(filterContent, BoxLayout.Y_AXIS));
     filterContent.setBackground(new Color(60, 60, 60));
     filterContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -199,38 +199,28 @@ class PropertiesPanel {
   }
 
   JPanel makeRow(String labelText, JTextField field, JSlider slider) {
-    JPanel row = new JPanel(new GridBagLayout());
+    JPanel row = new JPanel(new BorderLayout(6, 0));
     row.setOpaque(false);
-    row.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-    GridBagConstraints c = new GridBagConstraints();
-    c.gridy = 0;
-    c.insets = new Insets(0, 0, 6, 0);
 
     JLabel label = makeLabel(labelText);
-    label.setPreferredSize(new Dimension(110, 22));
-    c.gridx = 0;
-    c.weightx = 0;
-    c.anchor = GridBagConstraints.WEST;
-    row.add(label, c);
+    label.setPreferredSize(labelSize);
 
-    JPanel input = new JPanel(new BorderLayout(6, 0));
-    input.setOpaque(false);
+    JPanel fieldRow = new JPanel(new BorderLayout(6, 0));
+    fieldRow.setOpaque(false);
+    fieldRow.add(label, BorderLayout.WEST);
     if (field != null) {
       field.setColumns(5);
       field.setHorizontalAlignment(JTextField.RIGHT);
-      field.setPreferredSize(new Dimension(72, 24));
-      input.add(field, BorderLayout.WEST);
+      fieldRow.add(field, BorderLayout.EAST);
     }
-    slider.setPreferredSize(new Dimension(160, 24));
-    slider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-    input.add(slider, BorderLayout.CENTER);
 
-    c.gridx = 1;
-    c.weightx = 1;
-    c.fill = GridBagConstraints.HORIZONTAL;
-    row.add(input, c);
-    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+    JPanel sliderRow = new JPanel(new BorderLayout());
+    sliderRow.setOpaque(false);
+    sliderRow.add(slider, BorderLayout.CENTER);
+
+    row.add(fieldRow, BorderLayout.NORTH);
+    row.add(sliderRow, BorderLayout.CENTER);
+    row.add(Box.createVerticalStrut(8), BorderLayout.SOUTH);
     return row;
   }
 
@@ -412,8 +402,6 @@ class PropertiesPanel {
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setOpaque(false);
     panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), title));
-    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-    panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
     return panel;
   }
 
@@ -553,14 +541,10 @@ class PropertiesPanel {
     }
   }
 
-  // Tracks viewport width so content hugs the left instead of centering
-  class ScrollablePanel extends JPanel implements Scrollable {
-    ScrollablePanel() { super(); }
-
-    public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
-    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) { return 16; }
-    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) { return 48; }
-    public boolean getScrollableTracksViewportWidth() { return true; }
-    public boolean getScrollableTracksViewportHeight() { return false; }
+  void setPreferredHeight(int preferredHeight) {
+    if (root == null) return;
+    Dimension current = root.getPreferredSize();
+    root.setPreferredSize(new Dimension(current.width, preferredHeight));
+    root.revalidate();
   }
 }

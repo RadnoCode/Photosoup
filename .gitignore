@@ -1,3 +1,9 @@
 /.vscode/
 /out/
 /.VSCodeCounter/
+*.mp4
+*.psd
+*.zip
+*.bin
+/build/
+/dist/
