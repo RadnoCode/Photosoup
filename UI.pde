@@ -126,7 +126,7 @@ class UI {
   }
 
   boolean handleMousePressed(App app, int mx, int my, int btn) {
-    if (mx < RightpanelX) return false;
+    if (mx < RightpanelX && mx > LeftPannelW) return false;
 
     // buttons (generate intents)
     if (btnOpen.hit(mx, my)) {

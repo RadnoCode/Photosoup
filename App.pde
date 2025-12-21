@@ -115,6 +115,17 @@ public class App {
         tools.setTool(new ScaleTool(history));
         return;
     }
+    // for test only
+    if(k=='f' || k=='F') {
+      Layer l= doc.layers.getActive();
+      if(l.img!=null){
+        GaussianBlurFilter filter=new GaussianBlurFilter(5,5);
+        float[] kernel=filter.getkernel();
+        l.img=filter.blurHorizontal(l.img,kernel,5);
+        l.img=filter.blurVertical(l.img,kernel,5);
+      }
+      return;
+    }
   }
 }
 
