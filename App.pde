@@ -115,17 +115,22 @@ public class App {
         tools.setTool(new ScaleTool(history));
         return;
     }
-    // for test only
-    if(k=='f' || k=='F') {
+    /*for test only
+    if(k=='b' || k=='B') {
       Layer l= doc.layers.getActive();
-      if(l.img!=null){
-        GaussianBlurFilter filter=new GaussianBlurFilter(5,5);
-        float[] kernel=filter.getkernel();
-        l.img=filter.blurHorizontal(l.img,kernel,5);
-        l.img=filter.blurVertical(l.img,kernel,5);
-      }
+      l.filters.add(new GaussianBlurFilter(5, 5));
       return;
     }
+    if(k=='c' || k=='C') {
+      Layer l= doc.layers.getActive();
+      l.filters.add(new ContrastFilter(1.2));
+      return;
+    }
+    if(k=='h' || k=='H') {
+      Layer l= doc.layers.getActive();
+      l.filters.add(new SharpenFilter(1.0));
+      return;
+    }*/
   }
 }
 

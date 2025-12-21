@@ -1,8 +1,9 @@
 class Layer {
-  
   final int ID;
   PImage img = null;
   boolean empty=true;
+  boolean dirty=true;
+
   float opacity = 1.0;
   boolean visible = true;
   String name = "Layer";
@@ -17,18 +18,19 @@ class Layer {
   float sharp = 0.0;
   float blur = 0.0;       // 模糊基准是 0.0，越大越模糊
 
+  ArrayList<Filter> filters= new ArrayList<Filter>();
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
   float pivotY = 0;
 
   PImage originalImg; // 保存未经调色的原图，防止反复处理导致画质损失
-  PImage processedImg; // 实际绘制到画布上的图
-  
+  PImage processedImg=null; // 实际绘制到画布上的图
+
   Layer(PImage img,int id) {
     this.ID=id;
     this.img = img;
     if (img != null) {
-      this.originalImg = img.get(); // 拷贝一份原图
+      this.originalImg = img.get();
       this.processedImg = img.get();
       this.img = this.processedImg; // 兼容原有代码
       pivotX = img.width * 0.5;
@@ -38,6 +40,7 @@ class Layer {
 
   // ---------- Rendering helper ----------
   // Call inside CANVAS space (after doc.view.applyTransform()).
+
   void applyTransform() {
     translate(x, y);
     translate(pivotX, pivotY);
@@ -47,91 +50,23 @@ class Layer {
   }
   void drawSelf(Document doc) {
     if (img == null) return;
+    if(processedImg==null&&img!=null){
+      processedImg=img.get();
+    }
+    if(dirty&&img!=null){
+      applyFilters();
+    }
     doc.canvas.tint(255, 255 * opacity);
-    doc.canvas.image(img, -pivotX, -pivotY);
+    doc.canvas.image(processedImg, -pivotX, -pivotY);
     doc.canvas.noTint();
   }
-  void applyContrast(float value) {
-    this.contrast = value;
-    if (originalImg == null || processedImg == null) return;
-
-    originalImg.loadPixels();
-    processedImg.loadPixels();
-
-    // 对比度公式因子
-    // value 建议范围：0.0 (全灰) 到 2.0 (极高对比度)，1.0 为原图
-    
-    for (int i = 0; i < originalImg.pixels.length; i++) {
-      int c = originalImg.pixels[i];
-      
-      // 使用位移快速提取 RGB (比 red(), green() 快得多)
-      int r = (c >> 16) & 0xFF;
-      int g = (c >> 8) & 0xFF;
-      int b = c & 0xFF;
-      int a = (c >> 24) & 0xFF; // 保留 Alpha 通道
-
-      // 核心算法：(当前值 - 中等亮度) * 对比度 + 中等亮度
-      r = (int)((r - 128) * value + 128);
-      g = (int)((g - 128) * value + 128);
-      b = (int)((b - 128) * value + 128);
-
-      // 约束范围 0-255，防止溢出
-      r = r < 0 ? 0 : (r > 255 ? 255 : r);
-      g = g < 0 ? 0 : (g > 255 ? 255 : g);
-      b = b < 0 ? 0 : (b > 255 ? 255 : b);
-
-      // 重新拼合像素
-      processedImg.pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
-    }
-    processedImg.updatePixels();
-    // 注意：img 指向的是 processedImg，所以调用此方法后，drawSelf 会自动画出新图
-  }
-
-  void applySharpen(float value) {
-  this.sharp = value;
-  if (originalImg == null || processedImg == null) return;
-
-  originalImg.loadPixels();
-  processedImg.loadPixels();
-
-  int w = originalImg.width;
-  int h = originalImg.height;
-
-  // 锐化卷积核逻辑
-  // 我们使用一个简单的 3x3 矩阵：
-  // [  0, -v,  0 ]
-  // [ -v, 1+4v, -v ]
-  // [  0, -v,  0 ]
-  
-  for (int y = 1; y < h-1; y++) {
-    for (int x = 1; x < w-1; x++) {
-      int loc = x + y * w;
-      
-      float rTotal = 0, gTotal = 0, bTotal = 0;
-      
-      // 快速处理中心和上下左右四个点
-      int[] locs = {loc, loc-w, loc+w, loc-1, loc+1};
-      float[] weights = {1 + 4*value, -value, -value, -value, -value};
-      
-      for (int i = 0; i < 5; i++) {
-        int c = originalImg.pixels[locs[i]];
-        rTotal += ((c >> 16) & 0xFF) * weights[i];
-        gTotal += ((c >> 8) & 0xFF) * weights[i];
-        bTotal += (c & 0xFF) * weights[i];
-      }
-
-      int r = constrain((int)rTotal, 0, 255);
-      int g = constrain((int)gTotal, 0, 255);
-      int b = constrain((int)bTotal, 0, 255);
-      int a = (originalImg.pixels[loc] >> 24) & 0xFF;
-
-      processedImg.pixels[loc] = (a << 24) | (r << 16) | (g << 8) | b;
+  void applyFilters(){
+    processedImg=img.get();
+    for(int i=0;i<filters.size();i++){
+      Filter f=filters.get(i);
+      f.apply(this);
     }
   }
-  processedImg.updatePixels();
-  this.img = processedImg;
-}
-
   // ---------- Geometry helpers ----------
   // Pivot position in CANVAS space
   PVector pivotCanvas() {
@@ -140,8 +75,6 @@ class Layer {
   String toString(){
     return name;
   } 
-
-
 }
 
 class TextLayer extends Layer{

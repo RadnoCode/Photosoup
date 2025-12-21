@@ -69,12 +69,9 @@ class UI {
   }
 
   void draw(Document doc, ToolManager tools, CommandManager history) {
-    // panel background
-    noStroke();
-    fill(45);
-    rect(RightpanelX, 0, RightpanelW, height);
-    rect(0, 0, LeftPannelW, height);
 
+    rect(0, 0, LeftPannelW, height);
+    
     // buttons
     btnOpen.draw(false);
     btnMove.draw("Move".equals(tools.activeName()));
