@@ -13,20 +13,13 @@ class UI {
   int RightpanelX = width-RightpanelW;
   int LeftPannelW = 64;
 
-  boolean isUpdatingUI = false; // 新增：标记位，防止循环触发
   File lastExportDir;
 
   UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo, btnBlur, btnCon, btnSharpen;
   LayerListPanel layerListPanel;
 
 
-  JTextField fieldX, fieldY, fieldText;
-  JComboBox<String> comboFont;
-  JSpinner spinnerFontSize;
-  JPanel propsPanel;
-  JSlider sliderOpacity;
-  JSlider sliderContrast;
-  JSlider sliderSharpen; 
+  PropertiesPanel propertiesPanel;
 
   UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
@@ -63,8 +56,8 @@ class UI {
     //初始化图层面板
     layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, 0);
 
-    // 关键：初始化属性面板并放入 layerListPanel 的容器
-    setupPropertiesPanel(this.layerListPanel.container);
+    // 初始化属性面板（多标签页）
+    propertiesPanel = new PropertiesPanel(parent, doc, app, this.layerListPanel.container);
 
     // 默认导出目录：优先桌面，找不到则放到工程目录下的 exports
     lastExportDir = new File(System.getProperty("user.home"), "Desktop");
@@ -86,6 +79,9 @@ class UI {
     btnExport.draw(false);
     btnUndo.draw(false);
     btnRedo.draw(false);
+    btnBlur.draw(false);
+    btnCon.draw(false);
+    btnSharpen.draw(false);
 
     // status
     fill(230);
@@ -98,16 +94,14 @@ class UI {
     Layer active = doc.layers.getActive();
     // 核心逻辑：如果没有活跃图层，隐藏 Java Swing 的属性面板
     if (active == null) {
-      if (propsPanel != null && propsPanel.isVisible()) {
-        propsPanel.setVisible(false); // 隐藏面板
-      }
+      if (propertiesPanel != null) propertiesPanel.setVisible(false);
       // 可以在原本显示属性的地方画一些提示文字
       fill(100);
       textSize(12);
       text("Select a layer to edit properties", RightpanelX + 12, layerListPanel.topY - 20);
     } else {
-      if (propsPanel != null && !propsPanel.isVisible()) {
-        propsPanel.setVisible(true); // 重新显示面板
+      if (propertiesPanel != null) {
+        propertiesPanel.setVisible(true);
       }
     }
 
@@ -162,14 +156,17 @@ class UI {
     }
     if (btnBlur.hit(mx, my)) {
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new GaussianBlurFilter(5,10)));
+      updatePropertiesFromLayer(app.doc.layers.getActive());
       return true;
     }
     if( btnCon.hit(mx, my)) {
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new ContrastFilter(1.5)));
+      updatePropertiesFromLayer(app.doc.layers.getActive());
       return true;
     }
     if( btnSharpen.hit(mx, my)) {
       app.history.perform(app.doc,new AddFilterCommand(app.doc.layers.getActive(),new SharpenFilter(1.0)));
+      updatePropertiesFromLayer(app.doc.layers.getActive());
     }
     return true; // consume clicks on panel
   }
@@ -233,240 +230,15 @@ class UI {
 
     doc.renderFlags.dirtyComposite = true;
     layerListPanel.refresh(doc);
+    updatePropertiesFromLayer(doc.layers.getActive());
   }
 
 
 
   void updatePropertiesFromLayer(Layer l) {
-    if (l == null || fieldX == null || sliderOpacity == null) return;
-
-    isUpdatingUI = true;
-
-    // 同步坐标
-    fieldX.setText(String.valueOf((int)l.x));
-    fieldY.setText(String.valueOf((int)l.y));
-
-    // 同步对比度滑动条
-    if (sliderContrast != null) {
-      sliderContrast.setValue((int)(l.contrast * 100));
+    if (propertiesPanel != null) {
+      propertiesPanel.updateFromLayer(l);
     }
-
-    // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
-    sliderOpacity.setValue((int)(l.opacity * 255));
-
-    // 同步锐度滑动条
-    if (sliderSharpen != null){ 
-      sliderSharpen.setValue((int)(l.sharp * 100));
-    }
-
-    // 同步文本相关控件  
-    boolean isText = (l instanceof TextLayer);
-    fieldText.setEnabled(isText);
-    comboFont.setEnabled(isText);
-    spinnerFontSize.setEnabled(isText);
-    if (isText) {
-      TextLayer tl = (TextLayer) l;
-      fieldText.setText(tl.text);
-      comboFont.setSelectedItem(tl.fontName);
-      spinnerFontSize.setValue(tl.fontSize);
-    } else {
-      fieldText.setText("");
-    }
-
-    if (l == null) {
-      if (propsPanel != null) {
-        propsPanel.setVisible(false); // 隐藏面板
-      }
-      return;
-    }
-
-    // 如果有图层，确保面板可见并更新数值
-    if (propsPanel != null) {
-      propsPanel.setVisible(true);
-    }
-
-    isUpdatingUI = true;
-    if (fieldX != null) fieldX.setText(String.valueOf((int)l.x));
-    if (fieldY != null) fieldY.setText(String.valueOf((int)l.y));
-    if (sliderOpacity != null) {
-      sliderOpacity.setValue((int)(l.opacity * 255));
-    }
-
-    isUpdatingUI = false;
-  }
-
-
-
-  void updateLayerFromUI() {
-    if (isUpdatingUI) return;
-    Layer active = doc.layers.getActive();
-    if (active == null) return;
-    try {
-      float nx = Float.parseFloat(fieldX.getText());
-      float ny = Float.parseFloat(fieldY.getText());
-      float ns = active.scale; // keep current scale
-      float nr = active.rotation; // keep current rotation
-        app.history.perform(doc, new TransformCommand(active, nx, ny,ns,nr));
-    }
-    catch (Exception e) {
-      updatePropertiesFromLayer(active);
-    }
-  }
-
-  TextLayer getActiveTextLayer() {
-    Layer active = doc.layers.getActive();
-    if (active == null) return null;
-    if (!(active instanceof TextLayer)) return null;
-    return (TextLayer) active;
-  }
-
-  void updateTextFromUI() {
-    if (isUpdatingUI) return;
-    TextLayer tl = getActiveTextLayer();
-    if (tl == null) return;
-    app.history.perform(doc, new SetTextCommand(tl, fieldText.getText()));
-  }
-
-  void updateFontNameFromUI() {
-    if (isUpdatingUI) return;
-    TextLayer tl = getActiveTextLayer();
-    if (tl == null) return;
-    String value = (String) comboFont.getSelectedItem();
-    app.history.perform(doc, new SetFontNameCommand(tl, value));
-  }
-
-  void updateFontSizeFromUI() {
-    if (isUpdatingUI) return;
-    TextLayer tl = getActiveTextLayer();
-    if (tl == null) return;
-    int size = ((Number) spinnerFontSize.getValue()).intValue();
-    app.history.perform(doc, new SetFontSizeCommand(tl, size));
-  }
-    void handleContrastChange() {
-    if (isUpdatingUI) return; // 避免同步 UI 时产生的副作用
-
-    Layer active = doc.layers.getActive();
-    if (active == null) return;
-    
-    // 计算新的对比度值 (0.0 到 2.0)
-    float newVal = sliderContrast.getValue() / 100.0f;
-    
-    // 执行命令，这会触发 Layer.applyContrast 并标记 doc.markChanged()
-    app.history.perform(doc, new ContrastCommand(active, newVal));
-  }
-
-  /*void handleSharpenChange() {
-    if (isUpdatingUI) return;
-    Layer active = doc.layers.getActive();
-    if (active == null || active.originalImg == null) return;
-
-    float val = sliderSharpen.getValue() / 100.0f;
-    app.history.perform(doc, new SharpenCommand(active, val));
-  }*/
-  void setupPropertiesPanel(JPanel container) {
-    // 属性：位置、透明度、文本、对比度、锐度
-    propsPanel = new JPanel(new GridLayout(9, 2, 5, 5));
-    propsPanel.setBackground(new Color(60, 60, 60));
-
-    // 初始化 X, Y 输入框
-    JLabel labelX = new JLabel(" X:");
-    labelX.setForeground(Color.WHITE);
-    fieldX = new JTextField("0");
-
-    JLabel labelY = new JLabel(" Y:");
-    labelY.setForeground(Color.WHITE);
-    fieldY = new JTextField("0");
-
-    container.add(propsPanel, BorderLayout.SOUTH);
-
-    // 监听回车
-    fieldX.addActionListener(e -> updateLayerFromUI());
-    fieldY.addActionListener(e -> updateLayerFromUI());
-
-    // --- 新增：透明度部分 ---
-    JLabel labelOp = new JLabel(" Opacity:");
-    labelOp.setForeground(Color.WHITE);
-
-    // 锐度相关
-    JLabel labelSharpen = new JLabel(" Sharpen:");
-    labelSharpen.setForeground(Color.WHITE);
-    sliderSharpen = new JSlider(0, 100, 0); 
-    sliderSharpen.setBackground(new Color(60, 60, 60));
-    sliderSharpen.addChangeListener(e -> {
-    if (!sliderSharpen.getValueIsAdjusting()) {
-      handleSharpenChange();
-    }
-  });
-  /*
-    // 对比度相关
-    JLabel labelContrast = new JLabel(" Contrast:");
-    labelContrast.setForeground(Color.WHITE);
-    sliderContrast = new JSlider(0, 200, 100); // 默认为1.0，范围是 0.0 到 2.0
-    sliderContrast.setBackground(new Color(60, 60, 60));
-*/
-    // 参数：最小值, 最大值, 当前值
-    sliderOpacity = new JSlider(0, 255, 255);
-    sliderOpacity.setBackground(new Color(60, 60, 60));
-
-    // 文本相关
-    JLabel labelText = new JLabel(" Text:");
-    labelText.setForeground(Color.WHITE);
-    fieldText = new JTextField("");
-
-    JLabel labelFont = new JLabel(" Font:");
-    labelFont.setForeground(Color.WHITE);
-    String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
-    comboFont = new JComboBox<String>(fontOptions);
-
-    JLabel labelSize = new JLabel(" Size:");
-    labelSize.setForeground(Color.WHITE);
-    spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
-
-    // 监听滑动条
-    sliderContrast.addChangeListener(e -> {
-    // 关键性能优化：只有在用户松开鼠标时，才触发耗时的像素计算
-      if (!sliderContrast.getValueIsAdjusting()) {
-        handleContrastChange();
-      }
-    });
-
-    fieldText.addActionListener(e -> updateTextFromUI());
-    comboFont.addActionListener(e -> updateFontNameFromUI());
-    spinnerFontSize.addChangeListener(e -> updateFontSizeFromUI());
-
-    propsPanel.add(labelX);
-    propsPanel.add(fieldX);
-    propsPanel.add(labelY);
-    propsPanel.add(fieldY);
-    propsPanel.add(labelOp);
-    propsPanel.add(sliderOpacity);
-    propsPanel.add(labelContrast);
-    propsPanel.add(sliderContrast);
-    propsPanel.add(labelSharpen);
-    propsPanel.add(sliderSharpen);
-    propsPanel.add(labelText);
-    propsPanel.add(fieldText);
-    propsPanel.add(labelFont);
-    propsPanel.add(comboFont);
-    propsPanel.add(labelSize);
-    propsPanel.add(spinnerFontSize);
-
-    container.add(propsPanel, BorderLayout.SOUTH);
-
-    fieldX.addActionListener(e -> updateLayerFromUI());
-    fieldY.addActionListener(e -> updateLayerFromUI());
-  }
-
-
-
-  // 从 UI 更新到图层
-  void updateOpacityFromUI() {
-    if (isUpdatingUI) return;
-    Layer active = doc.layers.getActive();
-    if (active == null) return;
-
-    float newOp = sliderOpacity.getValue();
-    app.history.perform(doc, new OpacityCommand(active, newOp));
   }
 
 
