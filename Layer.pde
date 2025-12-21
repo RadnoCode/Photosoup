@@ -14,9 +14,8 @@ class Layer {
   float rotation = 0;     // radians
   float scale = 1.0;      // 
   float contrast = 1.0;
-
-  //Other properties
-  float blur,sharp;// need to be initialize
+  float sharp = 0.0;
+  float blur = 0.0;       // 模糊基准是 0.0，越大越模糊
 
   // Pivot in LOCAL space (image space)
   float pivotX = 0;
@@ -87,6 +86,51 @@ class Layer {
     processedImg.updatePixels();
     // 注意：img 指向的是 processedImg，所以调用此方法后，drawSelf 会自动画出新图
   }
+
+  void applySharpen(float value) {
+  this.sharp = value;
+  if (originalImg == null || processedImg == null) return;
+
+  originalImg.loadPixels();
+  processedImg.loadPixels();
+
+  int w = originalImg.width;
+  int h = originalImg.height;
+
+  // 锐化卷积核逻辑
+  // 我们使用一个简单的 3x3 矩阵：
+  // [  0, -v,  0 ]
+  // [ -v, 1+4v, -v ]
+  // [  0, -v,  0 ]
+  
+  for (int y = 1; y < h-1; y++) {
+    for (int x = 1; x < w-1; x++) {
+      int loc = x + y * w;
+      
+      float rTotal = 0, gTotal = 0, bTotal = 0;
+      
+      // 快速处理中心和上下左右四个点
+      int[] locs = {loc, loc-w, loc+w, loc-1, loc+1};
+      float[] weights = {1 + 4*value, -value, -value, -value, -value};
+      
+      for (int i = 0; i < 5; i++) {
+        int c = originalImg.pixels[locs[i]];
+        rTotal += ((c >> 16) & 0xFF) * weights[i];
+        gTotal += ((c >> 8) & 0xFF) * weights[i];
+        bTotal += (c & 0xFF) * weights[i];
+      }
+
+      int r = constrain((int)rTotal, 0, 255);
+      int g = constrain((int)gTotal, 0, 255);
+      int b = constrain((int)bTotal, 0, 255);
+      int a = (originalImg.pixels[loc] >> 24) & 0xFF;
+
+      processedImg.pixels[loc] = (a << 24) | (r << 16) | (g << 8) | b;
+    }
+  }
+  processedImg.updatePixels();
+  this.img = processedImg;
+}
 
   // ---------- Geometry helpers ----------
   // Pivot position in CANVAS space

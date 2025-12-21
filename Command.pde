@@ -442,3 +442,29 @@ class ContrastCommand implements Command {
     return "Change Contrast";
   }
 }
+
+// ---------- SharpenCommand (CPU based sharpen adjustment) ----------
+class SharpenCommand implements Command {
+  Layer layer;
+  float before, after;
+
+  SharpenCommand(Layer l, float val) {
+    this.layer = l;
+    this.before = l.sharp;
+    this.after = val;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.applySharpen(after);
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.applySharpen(before);
+    doc.markChanged();
+  }
+
+  public String name() { return "Sharpen Image"; }
+}

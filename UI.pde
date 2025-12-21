@@ -26,6 +26,7 @@ class UI {
   JPanel propsPanel;
   JSlider sliderOpacity;
   JSlider sliderContrast;
+  JSlider sliderSharpen; 
 
   UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
@@ -240,6 +241,12 @@ class UI {
     // 同步透明度滑动条：将 0.0-1.0 还原回 0-255
     sliderOpacity.setValue((int)(l.opacity * 255));
 
+    // 同步锐度滑动条
+    if (sliderSharpen != null){ 
+      sliderSharpen.setValue((int)(l.sharp * 100));
+    }
+
+    // 同步文本相关控件  
     boolean isText = (l instanceof TextLayer);
     fieldText.setEnabled(isText);
     comboFont.setEnabled(isText);
@@ -336,9 +343,18 @@ class UI {
     app.history.perform(doc, new ContrastCommand(active, newVal));
   }
 
+  void handleSharpenChange() {
+    if (isUpdatingUI) return;
+    Layer active = doc.layers.getActive();
+    if (active == null || active.originalImg == null) return;
+
+    float val = sliderSharpen.getValue() / 100.0f;
+    app.history.perform(doc, new SharpenCommand(active, val));
+  }
+
   void setupPropertiesPanel(JPanel container) {
-    // 属性：位置、透明度、文本、对比度
-    propsPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+    // 属性：位置、透明度、文本、对比度、锐度
+    propsPanel = new JPanel(new GridLayout(9, 2, 5, 5));
     propsPanel.setBackground(new Color(60, 60, 60));
 
     // 初始化 X, Y 输入框
@@ -359,6 +375,17 @@ class UI {
     // --- 新增：透明度部分 ---
     JLabel labelOp = new JLabel(" Opacity:");
     labelOp.setForeground(Color.WHITE);
+
+    // 锐度相关
+    JLabel labelSharpen = new JLabel(" Sharpen:");
+    labelSharpen.setForeground(Color.WHITE);
+    sliderSharpen = new JSlider(0, 100, 0); 
+    sliderSharpen.setBackground(new Color(60, 60, 60));
+    sliderSharpen.addChangeListener(e -> {
+    if (!sliderSharpen.getValueIsAdjusting()) {
+      handleSharpenChange();
+    }
+  });
   
     // 对比度相关
     JLabel labelContrast = new JLabel(" Contrast:");
@@ -404,6 +431,8 @@ class UI {
     propsPanel.add(sliderOpacity);
     propsPanel.add(labelContrast);
     propsPanel.add(sliderContrast);
+    propsPanel.add(labelSharpen);
+    propsPanel.add(sliderSharpen);
     propsPanel.add(labelText);
     propsPanel.add(fieldText);
     propsPanel.add(labelFont);
