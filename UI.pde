@@ -32,29 +32,29 @@ class UI {
     this.doc = doc;
     this.app = app;
 
-    int x = RightpanelX + 12;
+    int x = 12;
     int y = 20;
-    int w = RightpanelW - 24;
+    int w = LeftPannelW - 24;
     int h = 28;
     int gap = 10;
 
-    btnOpen = new UIButton(x, y, w, h, "Open (O)");
+    btnOpen = new UIButton(x, y, w, h, "(O)");
     y += h + gap;
-    btnMove = new UIButton(x, y, w, h, "Move (M)");
+    btnMove = new UIButton(x, y, w, h, "(M)");
     y += h + gap;
-    btnCrop = new UIButton(x, y, w, h, "Crop (C)");
+    btnCrop = new UIButton(x, y, w, h, "(C)");
     y += h + gap;
-    btnText = new UIButton(x, y, w, h, "Text (T)");
+    btnText = new UIButton(x, y, w, h, "(T)");
     y += h + gap;
-    btnExport = new UIButton(x, y, w, h, "Export (E)");
+    btnExport = new UIButton(x, y, w, h, "(E)");
     y += h + gap;
-    btnUndo = new UIButton(x, y, w, h, "Undo");
+    btnUndo = new UIButton(x, y, w, h, "(U)");
     y += h + gap;
-    btnRedo = new UIButton(x, y, w, h, "Redo");
+    btnRedo = new UIButton(x, y, w, h, "(R)");
     y += h + gap;
 
     //初始化图层面板
-    layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, y);
+    layerListPanel = new LayerListPanel(parent, doc, RightpanelX, RightpanelW, 0);
 
     // 关键：初始化属性面板并放入 layerListPanel 的容器
     setupPropertiesPanel(this.layerListPanel.container);
