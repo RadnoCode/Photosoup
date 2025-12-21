@@ -9,7 +9,7 @@ class UI {
   PApplet parent;
   Document doc;
 
-  int RightpanelW = 270;
+  int RightpanelW = 360;
   int RightpanelX = width-RightpanelW;
   int LeftPannelW = 64;
 

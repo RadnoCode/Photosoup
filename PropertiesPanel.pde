@@ -11,14 +11,14 @@ class PropertiesPanel {
   JTabbedPane tabs;
 
   // Transform controls
-  JPanel transformContent;
+  ScrollablePanel transformContent;
   JTextField fieldX, fieldY, fieldRotation, fieldScale, fieldOpacity, fieldText;
   JSlider sliderX, sliderY, sliderRotation, sliderScale, sliderOpacity;
   JComboBox<String> comboFont;
   JSpinner spinnerFontSize;
 
   // Filter controls
-  JPanel filterContent;
+  ScrollablePanel filterContent;
 
   PropertiesPanel(PApplet parent, Document doc, App app, JPanel hostContainer) {
     this.parent = parent;
@@ -46,7 +46,7 @@ class PropertiesPanel {
   }
 
   void buildTransformTab() {
-    transformContent = new JPanel();
+    transformContent = new ScrollablePanel();
     transformContent.setLayout(new BoxLayout(transformContent, BoxLayout.Y_AXIS));
     transformContent.setBackground(new Color(60, 60, 60));
     transformContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -84,6 +84,8 @@ class PropertiesPanel {
     textPanel.setLayout(new GridLayout(3, 2, 6, 6));
     textPanel.setOpaque(false);
     textPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), "Text"));
+    textPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    textPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, textPanel.getPreferredSize().height));
 
     JLabel labelText = makeLabel("Text");
     fieldText = new JTextField("", 10);
@@ -119,7 +121,7 @@ class PropertiesPanel {
   }
 
   void buildFilterTab() {
-    filterContent = new JPanel();
+    filterContent = new ScrollablePanel();
     filterContent.setLayout(new BoxLayout(filterContent, BoxLayout.Y_AXIS));
     filterContent.setBackground(new Color(60, 60, 60));
     filterContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -197,22 +199,38 @@ class PropertiesPanel {
   }
 
   JPanel makeRow(String labelText, JTextField field, JSlider slider) {
-    JPanel row = new JPanel(new BorderLayout(6, 0));
+    JPanel row = new JPanel(new GridBagLayout());
     row.setOpaque(false);
+    row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+    GridBagConstraints c = new GridBagConstraints();
+    c.gridy = 0;
+    c.insets = new Insets(0, 0, 6, 0);
 
     JLabel label = makeLabel(labelText);
-    row.add(label, BorderLayout.WEST);
+    label.setPreferredSize(new Dimension(110, 22));
+    c.gridx = 0;
+    c.weightx = 0;
+    c.anchor = GridBagConstraints.WEST;
+    row.add(label, c);
 
     JPanel input = new JPanel(new BorderLayout(6, 0));
     input.setOpaque(false);
     if (field != null) {
       field.setColumns(5);
+      field.setHorizontalAlignment(JTextField.RIGHT);
+      field.setPreferredSize(new Dimension(72, 24));
       input.add(field, BorderLayout.WEST);
     }
+    slider.setPreferredSize(new Dimension(160, 24));
+    slider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
     input.add(slider, BorderLayout.CENTER);
 
-    row.add(input, BorderLayout.CENTER);
-    row.add(Box.createVerticalStrut(4), BorderLayout.SOUTH);
+    c.gridx = 1;
+    c.weightx = 1;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    row.add(input, c);
+    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
     return row;
   }
 
@@ -394,6 +412,8 @@ class PropertiesPanel {
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setOpaque(false);
     panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(90, 90, 90)), title));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
     return panel;
   }
 
@@ -531,5 +551,16 @@ class PropertiesPanel {
     } catch (Exception e) {
       return fallback;
     }
+  }
+
+  // Tracks viewport width so content hugs the left instead of centering
+  class ScrollablePanel extends JPanel implements Scrollable {
+    ScrollablePanel() { super(); }
+
+    public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) { return 16; }
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) { return 48; }
+    public boolean getScrollableTracksViewportWidth() { return true; }
+    public boolean getScrollableTracksViewportHeight() { return false; }
   }
 }
