@@ -18,6 +18,7 @@ class PropertiesPanel {
   JSlider sliderX, sliderY, sliderRotation, sliderScale, sliderOpacity;
   JComboBox<String> comboFont;
   JSpinner spinnerFontSize;
+  JButton btnTextColor;
 
   // Filter controls
   JPanel filterContent;
@@ -93,7 +94,7 @@ class PropertiesPanel {
 
     // Text related controls
     JPanel textPanel = new JPanel();
-    textPanel.setLayout(new GridLayout(3, 2, 6, 6));
+    textPanel.setLayout(new GridLayout(4, 2, 6, 6));
     textPanel.setOpaque(false);
     textPanel.setBorder(BorderFactory.createEmptyBorder());
 
@@ -113,12 +114,24 @@ class PropertiesPanel {
     spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
     spinnerFontSize.addChangeListener(e -> applyFontSizeChange());
 
+    JLabel labelColor = makeLabel("Color");
+    btnTextColor = new JButton();
+    btnTextColor.setOpaque(true);
+    btnTextColor.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+    Dimension colorDim = new Dimension(60, spinnerFontSize.getPreferredSize().height);
+    btnTextColor.setPreferredSize(colorDim);
+    btnTextColor.setMinimumSize(colorDim);
+    btnTextColor.setMaximumSize(colorDim);
+    btnTextColor.addActionListener(e -> openColorPicker());
+
     textPanel.add(labelText);
     textPanel.add(fieldText);
     textPanel.add(labelFont);
     textPanel.add(comboFont);
     textPanel.add(labelSize);
     textPanel.add(spinnerFontSize);
+    textPanel.add(labelColor);
+    textPanel.add(btnTextColor);
 
     JPanel textBlock = makeSectionBlock("Text");
     textBlock.add(textPanel);
@@ -177,15 +190,18 @@ class PropertiesPanel {
       fieldText.setEnabled(true);
       comboFont.setEnabled(true);
       spinnerFontSize.setEnabled(true);
+      btnTextColor.setEnabled(true);
 
       fieldText.setText(tl.text);
       comboFont.setSelectedItem(tl.fontName);
       spinnerFontSize.setValue(tl.fontSize);
+      updateColorSwatch(tl.fillCol);
     } else {
       fieldText.setText("");
       fieldText.setEnabled(false);
       comboFont.setEnabled(false);
       spinnerFontSize.setEnabled(false);
+      btnTextColor.setEnabled(false);
     }
 
     rebuildFilterTab();
@@ -388,6 +404,77 @@ class PropertiesPanel {
     int size = ((Number) spinnerFontSize.getValue()).intValue();
     app.history.perform(doc, new SetFontSizeCommand(tl, size));
   }
+
+
+
+void openColorPicker() {
+  if (isUpdating) return;
+  if (!(activeLayer instanceof TextLayer)) return;
+  TextLayer tl = (TextLayer) activeLayer;
+
+  int initialCol = tl.fillCol;
+  final boolean[] committed = new boolean[] { false };
+
+  ColorPickerDialog dlg = new ColorPickerDialog(
+    SwingUtilities.getWindowAncestor(root),
+    initialCol,
+    (previewCol) -> {
+      // Live preview without flooding history.
+      if (isUpdating) return;
+      isUpdating = true;
+      tl.setFillCol(previewCol);
+      updateColorSwatch(previewCol);
+      doc.markChanged();
+      isUpdating = false;
+    },
+    (commitCol) -> {
+      committed[0] = true;
+      applyTextColorChange(commitCol);
+    }
+  );
+
+  dlg.addWindowListener(new java.awt.event.WindowAdapter() {
+    @Override public void windowClosing(java.awt.event.WindowEvent e) {
+      if (!committed[0]) {
+        tl.setFillCol(initialCol);
+        updateColorSwatch(initialCol);
+        doc.markChanged();
+      }
+    }
+    @Override public void windowClosed(java.awt.event.WindowEvent e) {
+      if (!committed[0]) {
+        tl.setFillCol(initialCol);
+        updateColorSwatch(initialCol);
+        doc.markChanged();
+      }
+    }
+  });
+
+  dlg.setVisible(true);
+}
+
+
+  void applyTextColorChange(int col) {
+    if (isUpdating) return;
+    if (!(activeLayer instanceof TextLayer)) return;
+    TextLayer tl = (TextLayer) activeLayer;
+    app.history.perform(doc, new SetTextColorCommand(tl, col));
+    updateColorSwatch(col);
+  }
+
+  void updateColorSwatch(int col) {
+    if (btnTextColor == null) return;
+    btnTextColor.setBackground(toAwtColor(col));
+  }
+
+  Color toAwtColor(int col) {
+    return new Color((int)parent.red(col), (int)parent.green(col), (int)parent.blue(col), (int)parent.alpha(col));
+  }
+
+
+
+
+
 
 
 

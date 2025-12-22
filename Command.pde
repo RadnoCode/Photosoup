@@ -425,6 +425,32 @@ class SetFontSizeCommand implements Command {
   }
 }
 
+class SetTextColorCommand implements Command {
+  TextLayer layer;
+  int before, after;
+
+  SetTextColorCommand(TextLayer layer, int colorValue) {
+    this.layer = layer;
+    this.before = layer != null ? layer.fillCol : color(255);
+    this.after = colorValue;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.setFillCol(after);
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.setFillCol(before);
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Set Text Color";
+  }
+}
 class AddFilterCommand implements Command {
 
 

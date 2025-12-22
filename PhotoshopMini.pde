@@ -6,6 +6,9 @@ import javax.swing.event.*;
 import processing.awt.PSurfaceAWT;
 import javax.swing.text.*;
 import javax.swing.border.TitledBorder;
+import java.awt.image.BufferedImage;
+import java.util.function.IntConsumer;
+import javax.swing.border.EmptyBorder;
 
 
 App app;

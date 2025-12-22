@@ -81,26 +81,18 @@ class UI {
         text("Text layer selected", RightpanelX + 12, height - 95);
       }
     }
-
-    // layerListPanel.refresh(doc);我把这一行代码注释掉进行调试
     layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
   ImageIcon loadIcon(String file) {
-    String[] candidates = {
-      "icon/" + file,
-      "icon/" + file + ".png",
-      "icons/" + file,
-      "icons/" + file + ".png"
-    };
-    for (String path : candidates) {
+    String path="icon/" + file + ".png";
+
       PImage p = loadImage(path);
       if (p != null) {
         PImage scaled = scaleIcon(p, 26);
         return new ImageIcon((Image) scaled.getNative());
       }
-    }
-    println("Icon missing for: " + file + " (looked in data/icon[s]/)");
+    println("Icon missing for: " + file + " (looked in data/icon/)");
     return null;
   }
 
