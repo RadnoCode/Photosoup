@@ -419,14 +419,13 @@ class PropertiesPanel {
     return label;
   }
 
+
   JPanel makeSectionBlock(String title) {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setOpaque(false);
-    TitledBorder border = BorderFactory.createTitledBorder(
-      BorderFactory.createLineBorder(new Color(230, 230, 230)),
-      title
-    );
+    javax.swing.border.TitledBorder border = BorderFactory.createTitledBorder(
+    BorderFactory.createLineBorder(new Color(230, 230, 230)), title);
     border.setTitleColor(new Color(230, 230, 230)); 
 
     panel.setBorder(border);
@@ -438,12 +437,14 @@ class PropertiesPanel {
   }
 
   void addGaussianBlurControls(GaussianBlurFilter filter) {
+    
     JPanel block = makeFilterBlock("Gaussian Blur");
 
     JTextField radiusField = new JTextField(String.valueOf(filter.radius), 4);
     JSlider radiusSlider = buildSlider(0, 50, filter.radius);
     JTextField sigmaField = new JTextField(String.valueOf(filter.sigma), 4);
     JSlider sigmaSlider = buildSlider(1, 50, filter.sigma);
+
 
     radiusField.addActionListener(e -> {
       if (isUpdating) return;
