@@ -184,7 +184,7 @@ class PropertiesPanel {
   void setVisible(boolean visible) {
     if (root != null) root.setVisible(visible);
   }
-
+  //add comment
   // --- Transform helpers ---
   JSlider buildSlider(int min, int max, int value) {
     JSlider s = new JSlider(min, max, value);
