@@ -15,7 +15,7 @@ class UI {
 
   File lastExportDir;
 
-  UIButton btnOpen, btnMove, btnCrop, btnText, btnExport, btnUndo, btnRedo, btnBlur, btnCon, btnSharpen;
+  UIButton btnOpen, btnMove, btnLayerMove, btnCrop, btnText, btnExport, btnUndo, btnRedo, btnBlur, btnCon, btnSharpen;
   LayerListPanel layerListPanel;
 
 
@@ -35,6 +35,8 @@ class UI {
     btnOpen = new UIButton(x, y, w, h, "Open");
     y += h + gap;
     btnMove = new UIButton(x, y, w, h, "Move");
+    y += h + gap;
+    btnLayerMove = new UIButton(x, y, w, h, "L-Move"); 
     y += h + gap;
     btnCrop = new UIButton(x, y, w, h, "Crop");
     y += h + gap;
@@ -75,6 +77,7 @@ class UI {
     // buttons
     btnOpen.draw(false);
     btnMove.draw("Move".equals(tools.activeName()));
+    btnLayerMove.draw("LayerMove".equals(tools.activeName()));
     btnCrop.draw("Crop".equals(tools.activeName()));
     btnText.draw("Text".equals(tools.activeName())); // text tool shares active name slot
     btnExport.draw(false);
@@ -136,6 +139,10 @@ class UI {
     }
     if (btnMove.hit(mx, my)) {
       app.tools.setTool(new MoveTool());
+      return true;
+    }
+    if(btnLayerMove.hit(mx, my)) {
+      app.tools.setTool(new LayerMoveTool(app.history));
       return true;
     }
     if (btnCrop.hit(mx, my)) {
