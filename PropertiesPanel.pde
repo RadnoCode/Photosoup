@@ -500,6 +500,7 @@ class PropertiesPanel {
 
   void applyBlurChange(GaussianBlurFilter filter, int radius, int sigma) {
     if (activeLayer == null) return;
+    
     filter.change(radius, sigma);
     markFiltersDirty();
   }

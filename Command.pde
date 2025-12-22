@@ -461,3 +461,30 @@ class RemoveFilterCommand implements Command {
     return "Remove Filter";
   }
 }
+
+class BlurChangeCommand implements Command {
+  BlurFilter filter;
+  float bR, aR,bS,aS;
+
+  BlurChangeCommand(BlurFilter filter, float aR,float aS) {
+    this.filter = filter;
+    this.aR = aR;
+    this.aS = aS;
+  }
+
+  public void execute(Document doc) {
+    filter.radius = after;s
+    filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    filter.radius = before;
+    filter.layer.dirty = true;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Blur Radius";
+  }
+}
