@@ -8,12 +8,12 @@ public class App {
 
 
   
-  /* 五大模块
-    Doc：工程文件的唯一真实记录，
-    Render：渲染器，从Doc中读取图层信息，显示出画布上的图像
-    Tool startYstem：负责处理工具选择，记录连续操作的结果。将结果发送给CommandManager
-    UI：基本节目图像，以及一些可以发送给CommandM的指令。
-    CommandManger：管理Command记录，发出更改Doc的指令
+  /* Five Core Modules
+    Doc: The single source of truth for project file data
+    Renderer: Retrieves layer information from Doc and renders visual content on the canvas
+    ToolManager: Handles tool selection, records the results of sequential operations, and dispatches results to CommandManager
+    UI: Manages rendering of basic interface elements and dispatches actionable commands to CommandManager
+    CommandManager: Maintains a record of Commands and issues instructions to modify the state of Doc
    */
   App(PApplet parent) {
     this(parent, new Document());
@@ -39,12 +39,8 @@ public class App {
     });
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
-  }// 生成函数，新建五大模块
+  }// Constructor: Initializes the five core modules
 
-
-  /*void update() {
-   // placeholder for future updates
-  }*/
   void render() {
     renderer.drawChecker(doc,doc.viewW,doc.viewH,50);
     renderer.drawCanvas(doc, tools);
@@ -64,7 +60,7 @@ public class App {
     if (ui.handleMouseDragged(this, mx, my, btn)) return;
     tools.mouseDragged(doc, mx, my, btn);
 
-    // 同步坐标到UI的状态显示
+    // Synchronizes coordinate data to the UI's status display panel
     Layer active = doc.layers.getActive();
     if (active != null) {
       ui.updatePropertiesFromLayer(active);
@@ -74,7 +70,7 @@ public class App {
   void onMouseReleased(int mx, int my, int btn) {
     if (ui.handleMouseReleased(this, mx, my, btn)) return;
     tools.mouseReleased(doc, mx, my, btn);
-    ui.refreshLayerList(doc); // 在鼠标释放时刷新图层列表
+    ui.refreshLayerList(doc);  // Refreshes the layer list when the mouse is released
   }
 
   void onMouseWheel(float delta) {
@@ -136,22 +132,6 @@ public class App {
         tools.setTool(new ScaleTool(history));
         return;
     }
-    /*for test only
-    if(k=='b' || k=='B') {
-      Layer l= doc.layers.getActive();
-      l.filters.add(new GaussianBlurFilter(5, 5));
-      return;
-    }
-    if(k=='c' || k=='C') {
-      Layer l= doc.layers.getActive();
-      l.filters.add(new ContrastFilter(1.2));
-      return;
-    }
-    if(k=='h' || k=='H') {
-      Layer l= doc.layers.getActive();
-      l.filters.add(new SharpenFilter(1.0));
-      return;
-    }*/
   }
 }
 
