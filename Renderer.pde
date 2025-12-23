@@ -7,23 +7,13 @@ class Renderer{
   void drawChecker(Document doc,int w, int h, int s) {
     pushMatrix();
     doc.view.applyTransform();
-    noStroke();
-
-    // Tile only inside the cropped canvas region and clip to its bounds.
-    int minX = max(0, doc.viewX);
-    int minY = max(0, doc.viewY);
-    int maxX = min(doc.canvas.width, doc.viewX + w);
-    int maxY = min(doc.canvas.height, doc.viewY + h);
-
-    for (int y = minY; y < maxY; y += s) {
-      int tileH = min(s, maxY - y);
-      for (int x = minX; x < maxX; x += s) {
-        int tileW = min(s, maxX - x);
-        int v = (((x / s) + (y / s)) % 2 == 0) ? 60 : 80;
-        fill(v);
-        rect(x, y, tileW, tileH);
-      }
+    if (doc.checkerCache == null
+      || doc.checkerCache.width != doc.canvas.width
+      || doc.checkerCache.height != doc.canvas.height
+      || doc.checkerTileSize != s) {
+      doc.buildChecker(s);
     }
+    image(doc.checkerCache, 0, 0);
     popMatrix();
   }// 棋盘格
 

@@ -1,10 +1,17 @@
 // Property panel with Transform / Filter tabs
+import com.formdev.flatlaf.FlatLightLaf;
 class PropertiesPanel {
   PApplet parent;
   Document doc;
   App app;
 
   final Dimension labelSize = new Dimension(90, 24);
+  final Color bgRoot = new Color(32, 32, 32);
+  final Color bgPanel = new Color(44, 44, 44);
+  final Color bgBlock = new Color(52, 52, 52);
+  final Color fgText = new Color(225, 225, 225);
+  final Color fgMuted = new Color(170, 170, 170);
+  final Color accent = new Color(90, 160, 255);
 
   Layer activeLayer;
   boolean isUpdating = false;
@@ -24,6 +31,10 @@ class PropertiesPanel {
   JPanel filterContent;
 
   PropertiesPanel(PApplet parent, Document doc, App app, JPanel hostContainer) {
+    
+
+    setupTextFieldStyle();
+
     this.parent = parent;
     this.doc = doc;
     this.app = app;
@@ -34,13 +45,15 @@ class PropertiesPanel {
 
   void buildUI() {
     root = new JPanel(new BorderLayout());
-    root.setOpaque(false);
+    root.setOpaque(true);
+    root.setBackground(bgRoot);
     root.setPreferredSize(new Dimension(300, 300));
 
     tabs = new JTabbedPane();
-    tabs.setBackground(new Color(50, 50, 50));
-    tabs.setForeground(Color.WHITE);
-    tabs.setBorder(BorderFactory.createEmptyBorder());
+    tabs.setBackground(bgRoot);
+    tabs.setForeground(fgText);
+    tabs.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 60, 60)));
+    tabs.setOpaque(true);
 
     buildTransformTab();
     buildFilterTab();
@@ -51,16 +64,16 @@ class PropertiesPanel {
   void buildTransformTab() {
     transformContent = new JPanel();
     transformContent.setLayout(new BoxLayout(transformContent, BoxLayout.Y_AXIS));
-    transformContent.setBackground(new Color(60, 60, 60));
+    transformContent.setBackground(bgPanel);
     transformContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
     int rangeX = doc.canvas != null ? doc.canvas.width : 2000;
     int rangeY = doc.canvas != null ? doc.canvas.height : 2000;
 
-    fieldX = new JTextField("0", 5);
+    fieldX = styledField("0");
     sliderX = buildSlider(-rangeX, rangeX, 0);
     bindPositionControl(fieldX, sliderX);
-    fieldY = new JTextField("0", 5);
+    fieldY = styledField("0");
     sliderY = buildSlider(-rangeY, rangeY, 0);
     bindPositionControl(fieldY, sliderY);
     JPanel positionBlock = makeSectionBlock("Position");
@@ -68,7 +81,7 @@ class PropertiesPanel {
     positionBlock.add(makeRow("Y", fieldY, sliderY));
     transformContent.add(positionBlock);
 
-    fieldRotation = new JTextField("0", 5);
+    fieldRotation = styledField("0");
     sliderRotation = buildSlider(-180, 180, 0);
     bindRotationControl(fieldRotation, sliderRotation);
     JPanel rotationBlock = makeSectionBlock("Rotation");
@@ -76,7 +89,7 @@ class PropertiesPanel {
     transformContent.add(Box.createVerticalStrut(8));
     transformContent.add(rotationBlock);
 
-    fieldScale = new JTextField("1.0", 5);
+    fieldScale = styledField("1.0");
     sliderScale = buildSlider(10, 300, 100); // 0.1x - 3x
     bindScaleControl(fieldScale, sliderScale);
     JPanel scaleBlock = makeSectionBlock("Scale");
@@ -84,7 +97,7 @@ class PropertiesPanel {
     transformContent.add(Box.createVerticalStrut(8));
     transformContent.add(scaleBlock);
 
-    fieldOpacity = new JTextField("255", 5);
+    fieldOpacity = styledField("255");
     sliderOpacity = buildSlider(0, 255, 255);
     bindOpacityControl(fieldOpacity, sliderOpacity);
     JPanel opacityBlock = makeSectionBlock("Opacity");
@@ -95,11 +108,12 @@ class PropertiesPanel {
     // Text related controls
     JPanel textPanel = new JPanel();
     textPanel.setLayout(new GridLayout(4, 2, 6, 6));
-    textPanel.setOpaque(false);
+    textPanel.setOpaque(true);
+    textPanel.setBackground(bgBlock);
     textPanel.setBorder(BorderFactory.createEmptyBorder());
 
     JLabel labelText = makeLabel("Text");
-    fieldText = new JTextField("", 8);
+    fieldText = styledField("");
     fieldText.addActionListener(e -> applyTextChange());
     fieldText.addFocusListener(new java.awt.event.FocusAdapter() {
       public void focusLost(java.awt.event.FocusEvent e) { applyTextChange(); }
@@ -108,22 +122,25 @@ class PropertiesPanel {
     JLabel labelFont = makeLabel("Font");
     String[] fontOptions = { "Arial", "Helvetica", "Courier", "Times New Roman" };
     comboFont = new JComboBox<String>(fontOptions);
+    comboFont.setBackground(bgBlock);
+    comboFont.setForeground(fgText);
+    comboFont.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
     comboFont.addActionListener(e -> applyFontNameChange());
 
     JLabel labelSize = makeLabel("Size");
     spinnerFontSize = new JSpinner(new SpinnerNumberModel(48, 6, 400, 2));
+    styleSpinner(spinnerFontSize);
     spinnerFontSize.addChangeListener(e -> applyFontSizeChange());
 
     JLabel labelColor = makeLabel("Color");
     btnTextColor = new JButton();
     btnTextColor.setOpaque(true);
-    btnTextColor.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+    btnTextColor.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
     Dimension colorDim = new Dimension(60, spinnerFontSize.getPreferredSize().height);
     btnTextColor.setPreferredSize(colorDim);
     btnTextColor.setMinimumSize(colorDim);
     btnTextColor.setMaximumSize(colorDim);
     btnTextColor.addActionListener(e -> openColorPicker());
-
     textPanel.add(labelText);
     textPanel.add(fieldText);
     textPanel.add(labelFont);
@@ -140,7 +157,8 @@ class PropertiesPanel {
 
     JScrollPane transformScroll = new JScrollPane(transformContent);
     transformScroll.setBorder(BorderFactory.createEmptyBorder());
-    transformScroll.getViewport().setBackground(new Color(60, 60, 60));
+    transformScroll.getViewport().setBackground(bgPanel);
+    transformScroll.getVerticalScrollBar().setUnitIncrement(12);
     transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     tabs.addTab("Transform", transformScroll);
   }
@@ -148,12 +166,13 @@ class PropertiesPanel {
   void buildFilterTab() {
     filterContent = new JPanel();
     filterContent.setLayout(new BoxLayout(filterContent, BoxLayout.Y_AXIS));
-    filterContent.setBackground(new Color(60, 60, 60));
+    filterContent.setBackground(bgPanel);
     filterContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
     JScrollPane scroll = new JScrollPane(filterContent);
     scroll.setBorder(BorderFactory.createEmptyBorder());
-    scroll.getViewport().setBackground(new Color(60, 60, 60));
+    scroll.getViewport().setBackground(bgPanel);
+    scroll.getVerticalScrollBar().setUnitIncrement(12);
     scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
     tabs.addTab("Filter", scroll);
@@ -217,13 +236,16 @@ class PropertiesPanel {
   // --- Transform helpers ---
   JSlider buildSlider(int min, int max, int value) {
     JSlider s = new JSlider(min, max, value);
-    s.setBackground(new Color(60, 60, 60));
+    s.setBackground(bgBlock);
+    s.setOpaque(true);
+    s.setForeground(accent);
+    s.setBorder(BorderFactory.createEmptyBorder());
     return s;
   }
 
   JLabel makeLabel(String text) {
     JLabel label = new JLabel(text);
-    label.setForeground(Color.WHITE);
+    label.setForeground(fgText);
     return label;
   }
 
@@ -502,7 +524,7 @@ void openColorPicker() {
 
   JLabel makeInfoLabel(String text) {
     JLabel label = new JLabel(text);
-    label.setForeground(new Color(200, 200, 200));
+    label.setForeground(fgMuted);
     return label;
   }
 
@@ -510,12 +532,18 @@ void openColorPicker() {
   JPanel makeSectionBlock(String title) {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setOpaque(false);
-    javax.swing.border.TitledBorder border = BorderFactory.createTitledBorder(
-    BorderFactory.createLineBorder(new Color(230, 230, 230)), title);
-    border.setTitleColor(new Color(230, 230, 230)); 
+    panel.setOpaque(true);
+    panel.setBackground(bgBlock);
+    panel.setBorder(BorderFactory.createCompoundBorder(
+      BorderFactory.createLineBorder(new Color(70, 70, 70)),
+      BorderFactory.createEmptyBorder(10, 10, 10, 10)
+    ));
 
-    panel.setBorder(border);
+    JLabel header = new JLabel(title);
+    header.setForeground(fgText);
+    header.setFont(header.getFont().deriveFont(Font.BOLD));
+    header.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
+    panel.add(header);
     return panel;
   }
 
@@ -523,13 +551,31 @@ void openColorPicker() {
     return makeSectionBlock(title);
   }
 
+  JTextField styledField(String text) {
+    JTextField field = new JTextField(text, 5);
+    field.setBackground(bgBlock);
+    field.setForeground(fgText);
+    field.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
+    return field;
+  }
+
+  void styleSpinner(JSpinner spinner) {
+    spinner.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
+    if (spinner.getEditor() instanceof JSpinner.DefaultEditor) {
+      JSpinner.DefaultEditor editor = (JSpinner.DefaultEditor) spinner.getEditor();
+      editor.getTextField().setBackground(bgBlock);
+      editor.getTextField().setForeground(fgText);
+      editor.getTextField().setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+    }
+  }
+
   void addGaussianBlurControls(GaussianBlurFilter filter) {
     
     JPanel block = makeFilterBlock("Gaussian Blur");
 
-    JTextField radiusField = new JTextField(String.valueOf(filter.radius), 4);
+    JTextField radiusField = styledField(String.valueOf(filter.radius));
     JSlider radiusSlider = buildSlider(0, 50, filter.radius);
-    JTextField sigmaField = new JTextField(String.valueOf(filter.sigma), 4);
+    JTextField sigmaField = styledField(String.valueOf(filter.sigma));
     JSlider sigmaSlider = buildSlider(1, 50, filter.sigma);
 
 
@@ -569,7 +615,7 @@ void openColorPicker() {
   void addContrastControls(ContrastFilter filter) {
     JPanel block = makeFilterBlock("Contrast");
 
-    JTextField valueField = new JTextField(String.format("%.2f", filter.value), 5);
+    JTextField valueField = styledField(String.format("%.2f", filter.value));
     JSlider valueSlider = buildSlider(0, 200, (int)(filter.value * 100));
 
     valueField.addActionListener(e -> {
@@ -595,7 +641,7 @@ void openColorPicker() {
   void addSharpenControls(SharpenFilter filter) {
     JPanel block = makeFilterBlock("Sharpen");
 
-    JTextField valueField = new JTextField(String.format("%.2f", filter.value), 5);
+    JTextField valueField = styledField(String.format("%.2f", filter.value));
     JSlider valueSlider = buildSlider(0, 300, (int)(filter.value * 100));
 
     valueField.addActionListener(e -> {

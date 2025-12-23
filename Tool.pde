@@ -307,7 +307,7 @@ class LayerMoveTool implements Tool {
     target.x = initialLayerX + dx;
     target.y = initialLayerY + dy;
     
-    doc.markChanged(); // 标记需要重新渲染
+    doc.markChanged(); 
   }
 
   public void mouseReleased(Document doc, int mx, int my, int btn) {

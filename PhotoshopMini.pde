@@ -9,6 +9,10 @@ import javax.swing.border.TitledBorder;
 import java.awt.image.BufferedImage;
 import java.util.function.IntConsumer;
 import javax.swing.border.EmptyBorder;
+import com.formdev.flatlaf.FlatLightLaf;
+
+
+
 
 
 App app;
@@ -155,21 +159,85 @@ void settings() {
   int WinHeight = (int)(usable.height * ratio);
   size(WinWideth,WinHeight);
 }
+void setupFlatLaf() {
+  try {
+    UIManager.setLookAndFeel(new FlatLightLaf());
+  } catch (UnsupportedLookAndFeelException e) {
+    e.printStackTrace();
+  }
+}
+static void setupTextFieldStyle() {
+  UIManager.put("Component.arc", 12);
+
+  UIManager.put("Component.focusWidth", 1);
+  UIManager.put("Component.innerFocusWidth", 0);
+
+  UIManager.put("TextField.margin", new Insets(6, 10, 6, 10));
+  UIManager.put("PasswordField.margin", new Insets(6, 10, 6, 10));
+  UIManager.put("FormattedTextField.margin", new Insets(6, 10, 6, 10));
+
+  UIManager.put("TextComponent.selectionBackground", new Color(120, 120, 120, 140));
+  UIManager.put("TextComponent.selectionForeground", Color.WHITE);
+
+  // 光标颜色
+  UIManager.put("TextComponent.caretForeground", new Color(230, 230, 230));
+}
+static void setupButtonStyle() {
+  UIManager.put("Component.arc", 12);
+  UIManager.put("Component.focusWidth", 1);
+  UIManager.put("Component.innerFocusWidth", 0);
 
 
+  UIManager.put("Button.margin", new Insets(8, 14, 8, 14));
+  UIManager.put("Button.borderWidth", 1);
+  UIManager.put("Button.disabledText", new Color(160, 160, 160));
+}
+static void setupTabbedPaneStyle() {
+  UIManager.put("TabbedPane.showTabSeparators", false);
+  UIManager.put("TabbedPane.tabHeight", 28);
+  UIManager.put("TabbedPane.tabInsets", new Insets(6, 12, 6, 12));
+}
+static void setupScrollBarStyle() {
+  UIManager.put("ScrollBar.width", 10);                 
+  UIManager.put("ScrollBar.thumbArc", 999);
+  UIManager.put("ScrollBar.trackArc", 999); 
+}
+static void setupSliderStyle() {
+  UIManager.put("Slider.trackWidth", 4);
+  UIManager.put("Slider.thumbSize", new java.awt.Dimension(12, 12));
+}
+static void setupListStyle(){
+  UIManager.put("List.background", new Color(45, 45, 45));
+  UIManager.put("List.foreground", new Color(220, 220, 220));
+  UIManager.put("List.selectionBackground", new Color(90, 90, 90));
+  UIManager.put("List.selectionForeground", Color.WHITE);
+  UIManager.put("List.background", new Color(60, 60, 60));
+  UIManager.put("List.foreground", new Color(220, 220, 220));
+
+// 焦点不要抢戏
+UIManager.put("List.focusCellHighlightBorder", BorderFactory.createEmptyBorder());
+}
 void setup() {
-  surface.setTitle("Crop Demo - Command startYstem (Single File)");
+  setupFlatLaf();
+  setupTabbedPaneStyle();
+  setupScrollBarStyle();
+  setupSliderStyle();
+  setupTextFieldStyle();
+  setupButtonStyle();
+  setupListStyle();
+  surface.setTitle("Photosoup");
   CanvasSpec spec = promptForCanvasSize();
   Document doc = new Document(spec.width, spec.height);
   app = new App(this, doc);
   app.doc.view.setFit(app.doc);
-
-
 }
+
+
+
+
 
 void draw() {
   background(30);
-  //app.update();
   app.render();
 }
 

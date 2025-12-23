@@ -41,6 +41,14 @@ class LayerListPanel {
     list.setForeground(Color.WHITE);
     list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 
+    list.setFixedCellHeight(56);                 // 48缩略图 + 上下呼吸
+    list.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+    list.setSelectionBackground(new Color(80, 80, 80));
+    list.setSelectionForeground(Color.WHITE);
+    list.setOpaque(true);
+
+
+
     // select active layers
     list.addListSelectionListener(e -> {
       if (isRefreshing || e.getValueIsAdjusting()) return;
@@ -126,8 +134,8 @@ class LayerListPanel {
     header.setOpaque(false);
     header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     JLabel label = new JLabel("Layers");
-    label.setForeground(new Color(60,60,60));
-    label.setFont(new Font("SansSerif", Font.BOLD, 20));
+    label.setForeground(new Color(80,80,80));
+    label.setFont(new Font("SansSerif", Font.BOLD, 16));
 
 
     addButton.setMargin(new Insets(2, 8, 2, 8));
@@ -296,8 +304,8 @@ class LayerListPanel {
     if (layer == null) return null;
     PImage thumb = layer.getThumbnail();
     if (thumb == null) return null;
-    Image img = (Image) thumb.getNative();
-    Image scaled = img.getScaledInstance(ICON_W, ICON_H, Image.SCALE_SMOOTH);
+    java.awt.Image img = (java.awt.Image) thumb.getNative();
+    java.awt.Image scaled = img.getScaledInstance(ICON_W, ICON_H, java.awt.Image.SCALE_SMOOTH);
     return new ImageIcon(scaled);
   }
     public Component getListCellRendererComponent(
@@ -308,14 +316,14 @@ class LayerListPanel {
       boolean cellHasFocus
     )
     {
-        eyeLabel.setText(layer.visible ? "O" : "X");
-        nameLabel.setText(layer.name);
-        ImageIcon icon = makeIconFromLayer(layer);
-        iconLabel.setIcon(icon);
-        Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
-        setBackground(bg);
+        eyeLabel.setText(layer.visible ? "👁" : "⦸");
+    ImageIcon icon = makeIconFromLayer(layer);
+      iconLabel.setIcon(icon);
+      nameLabel.setText(layer.name);
+      Color bg = isSelected ? new Color(80, 80, 80) : list.getBackground();
+      setBackground(bg);
 
-        return this;
+      return this;
     }
   }
   

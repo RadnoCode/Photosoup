@@ -1,5 +1,8 @@
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
+
 
 class UI {
   App app;
@@ -8,8 +11,12 @@ class UI {
 
   int RightpanelW = 340;
   int RightpanelX = width-RightpanelW;
-  int LeftPannelW = 64;
+  int LeftPannelW = 48;
+  int filterPanelMaxW = 48;
   JPanel toolPanel;
+  JPanel filterPanel;
+  JButton filterButton;
+  boolean filterPanelVisible = false;
   ArrayList<JButton> toolButtons = new ArrayList<JButton>();
 
   File lastExportDir;
@@ -18,12 +25,10 @@ class UI {
 
 
   PropertiesPanel propertiesPanel;
-
   UI(PApplet parent, Document doc, App app) {
     this.parent = parent;
     this.doc = doc;
     this.app = app;
-
     buildToolPanel();
 
     //初始化图层面板
@@ -84,20 +89,38 @@ class UI {
     layerListPanel.updateLayout(RightpanelX, RightpanelW, height);
   }
 
-  ImageIcon loadIcon(String file) {
+
+  // ----- Icon loading -----
+  Icon loadIcon(String file) {
     return loadIcon(file, 26);
   }
 
-  ImageIcon loadIcon(String file, int targetSize) {
-    String path="icon/" + file + ".png";
+  Icon loadIcon(String file, int targetSize) {
+    // Prefer SVG for crisp scaling to the exact button size.
+    Icon svgIcon = loadSvgIcon(file, targetSize);
+    if (svgIcon != null) return svgIcon;
 
-      PImage p = loadImage(path);
-      if (p != null) {
-        PImage scaled = scaleIcon(p, targetSize);
-        return new ImageIcon((Image) scaled.getNative());
-      }
-    println("Icon missing for: " + file + " (looked in data/icon/)");
+    // PNG fallback from data/icon.
+    PImage p = loadImage("icon/" + file + ".png");
+    if (p != null) {
+      PImage scaled = scaleIcon(p, targetSize);
+      return new ImageIcon((java.awt.Image) scaled.getNative());
+    }
+
+    println("Icon missing for: " + file + " (expected in data/icon/ as .svg or .png)");
     return null;
+  }
+
+  Icon loadSvgIcon(String file, int targetSize) {
+    try {
+      File svgFile = new File(parent.sketchPath("data/icon/" + file + ".svg"));
+      if (!svgFile.exists()) return null;
+      FlatSVGIcon base = new FlatSVGIcon(svgFile.toURI().toURL());
+      return base.derive(targetSize, targetSize);
+    } catch (Exception e) {
+      println("Failed to load SVG icon for " + file + ": " + e.getMessage());
+      return null;
+    }
   }
 
   // Keep icons within the toolbar width.
@@ -112,6 +135,7 @@ class UI {
     copy.resize(w, h);
     return copy;
   }
+
 
   void addDivider(JPanel panel) {
   panel.add(Box.createVerticalStrut(8));
@@ -133,76 +157,134 @@ class UI {
     toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
     toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0)); // remove padding gap
 
-    addToolButton("import", "Import an image", () -> openFileDialog());
-    addToolButton("export", "Export canvas (E)", () -> exportCanvas());
+    addToolButton(toolPanel,"import", "Import an image", () -> openFileDialog());
+    addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas());
     
     addDivider(toolPanel);
-    addToolButton("hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
-    addToolButton("move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)));
-    addToolButton("crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
-    addToolButton("rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
-    addToolButton("scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
-    addToolButton("text", "Create a text layer", () -> createTextLayer());
+    addToolButton(toolPanel,"hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
+    addToolButton(toolPanel, "move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)));
+    addToolButton(toolPanel, "crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
+    addToolButton(toolPanel, "rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
+    addToolButton(toolPanel, "scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
+    addToolButton(toolPanel, "text", "Create a text layer", () -> createTextLayer());
     
     addDivider(toolPanel);
-    addToolButton("undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc));
-    addToolButton("redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc));
-    
+    addToolButton(toolPanel,"undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc));
+    addToolButton(toolPanel,"redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc));
+
     addDivider(toolPanel);
-    addToolButton("blur", "Add Gaussian Blur filter", () -> {
-      Layer active = app.doc.layers.getActive();
-      if (active == null) return;
-      app.history.perform(app.doc, new AddFilterCommand(active, new GaussianBlurFilter(5, 10)));
-      updatePropertiesFromLayer(active);
-    });
-    addToolButton("contrast", "Add Contrast filter", () -> {
-      Layer active = app.doc.layers.getActive();
-      if (active == null) return;
-      app.history.perform(app.doc, new AddFilterCommand(active, new ContrastFilter(1.5)));
-      updatePropertiesFromLayer(active);
-    });
-    addToolButton("sharp", "Add Sharpen filter", () -> {
-      Layer active = app.doc.layers.getActive();
-      if (active == null) return;
-      app.history.perform(app.doc, new AddFilterCommand(active, new SharpenFilter(1.0)));
-      updatePropertiesFromLayer(active);
-    });
+    filterButton = addToolButton(toolPanel,"filter", "Filters", () -> toggleFilterPanel());
+    buildFilterPanel();
 
     attachToolPanelToFrame();
   }
+  
+  JButton addToolButton(JPanel targetPanel, String iconFile, String tooltip, Runnable action) {
+    int btnWidth = (targetPanel == toolPanel)
+      ? LeftPannelW
+      : (targetPanel == filterPanel ? filterPanelMaxW : 20);
 
-  void addToolButton(String iconFile, String tooltip, Runnable action) {
-    
-    int btnWidth = max(60, LeftPannelW - 8);
-    int btnHeight = 40;
-    int iconTarget = max(16, min(btnWidth, btnHeight) - 4); // fill button while keeping square
+    int btnHeight = 48;
+    int iconTarget = 32; 
 
-    ImageIcon icon = loadIcon(iconFile, iconTarget);
-    String label = iconFile.length() > 0 ? iconFile.substring(0,1).toUpperCase() + iconFile.substring(1) : "";
-    JButton btn = new JButton(icon);
+    Icon icon = loadIcon(iconFile, iconTarget);
+
+    String label = iconFile.length() > 0 ? iconFile.substring(0, 1).toUpperCase() + iconFile.substring(1): "";
+
+    JButton btn = new JButton();
+
+    // --- icon / text 兜底逻辑 ---
+    if (icon != null) {
+      btn.setIcon(icon);
+      btn.setText("");
+    } else {
+      btn.setIcon(null);
+      btn.setText(label);
+      btn.setFont(btn.getFont().deriveFont(Font.BOLD, 13f));
+    }
+
+
+    btn.putClientProperty("JButton.buttonType", "toolBarButton");
+
+
+    btn.setContentAreaFilled(true);
+
 
     btn.setBorderPainted(false);
+
+
     btn.setFocusPainted(false);
-    btn.setContentAreaFilled(false); 
-    btn.setOpaque(false);  
+    btn.setFocusable(false);
+    btn.setRolloverEnabled(true);
+
+
+    btn.setOpaque(true);
+
     if (icon == null) btn.setText(label);
-    else btn.setText(""); // icon-only when available
-    btn.setHorizontalTextPosition(SwingConstants.CENTER);
-    btn.setVerticalTextPosition(SwingConstants.CENTER);
+    else btn.setText("");
+
     btn.setToolTipText(tooltip);
-    btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+    btn.setHorizontalAlignment(SwingConstants.CENTER);
+    btn.setVerticalAlignment(SwingConstants.CENTER);
+
     Dimension fixed = new Dimension(btnWidth, btnHeight);
     btn.setMaximumSize(fixed);
     btn.setPreferredSize(fixed);
     btn.setMinimumSize(fixed);
-    btn.setFocusable(false);
+
     btn.addActionListener(e -> action.run());
-    btn.setBackground(new Color(80, 80, 80));
-    btn.setForeground(Color.WHITE);
-    btn.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100)));
-    toolPanel.add(btn);
-    toolPanel.add(Box.createVerticalStrut(6));
+
+    targetPanel.add(btn);
+    targetPanel.add(Box.createVerticalStrut(6));
     toolButtons.add(btn);
+    return btn;
+}
+
+
+  void buildFilterPanel() {
+    filterPanel = new JPanel();
+    filterPanel.setLayout(new BoxLayout(filterPanel, BoxLayout.Y_AXIS));
+    filterPanel.setBackground(new Color(70, 70, 70));
+    filterPanel.setBorder(BorderFactory.createCompoundBorder(
+      BorderFactory.createLineBorder(new Color(100, 100, 100)),
+      BorderFactory.createEmptyBorder(6, 4, 6, 4)
+    ));
+    filterPanel.setMaximumSize(new Dimension(filterPanelMaxW, Integer.MAX_VALUE));
+    
+    
+
+    addToolButton(filterPanel,"blur", "Add Gaussian Blur filter", () -> applyFilter(new GaussianBlurFilter(5, 10)));
+    addToolButton(filterPanel,"contrast", "Add Contrast filter", () -> applyFilter(new ContrastFilter(1.5)));
+    addToolButton(filterPanel,"sharpen", "Add Sharpen filter", () -> applyFilter(new SharpenFilter(1.0)));
+
+    int clampW = filterPanelMaxW;
+    Dimension pref = filterPanel.getPreferredSize();
+    filterPanel.setPreferredSize(new Dimension(clampW, pref.height));
+    filterPanel.setMinimumSize(new Dimension(clampW, 0));
+    filterPanel.setMaximumSize(new Dimension(clampW, Integer.MAX_VALUE));
+
+    filterPanel.setVisible(false);
+  }
+
+
+
+  void toggleFilterPanel() {
+    setFilterPanelVisible(!filterPanelVisible);
+  }
+
+  void setFilterPanelVisible(boolean visible) {
+    filterPanelVisible = visible;
+    if (filterPanel != null) {
+      filterPanel.setVisible(visible);
+      filterPanel.revalidate();
+    }
+  }
+
+  void applyFilter(Filter filter) {
+    Layer active = app.doc.layers.getActive();
+    if (active == null) return;
+    app.history.perform(app.doc, new AddFilterCommand(active, filter));
+    updatePropertiesFromLayer(active);
   }
 
   void attachToolPanelToFrame() {
@@ -210,31 +292,51 @@ class UI {
     PSurfaceAWT.SmoothCanvas canvas = (PSurfaceAWT.SmoothCanvas) surf.getNative();
     JFrame frame = (JFrame) canvas.getFrame();
     frame.getLayeredPane().add(toolPanel, JLayeredPane.PALETTE_LAYER);
+    if (filterPanel != null) {
+      frame.getLayeredPane().add(filterPanel, JLayeredPane.PALETTE_LAYER);
+    }
     frame.getLayeredPane().setLayout(null);
   }
 
   void updateToolPanelLayout(int parentHeight) {
     if (toolPanel == null) return;
     int margin = 0;
-    int w = max(60, LeftPannelW - margin * 2);
+    int w = LeftPannelW;
     toolPanel.setBounds(margin, 0, w, parentHeight);
+    toolPanel.doLayout();
+
+    if (filterPanel != null && filterButton != null) {
+      int gap = 6;
+      int filterX = margin + w + gap;
+      int filterY = filterButton.getY();
+      Dimension pref = filterPanel.getPreferredSize();
+      int filterW = filterPanelMaxW;
+      filterPanel.setBounds(filterX, filterY, filterW, pref.height);
+      filterPanel.revalidate();
+    }
     toolPanel.revalidate();
   }
 
   boolean handleMousePressed(App app, int mx, int my, int btn) {
     // Swing toolbar + right panel consume clicks; canvas area goes to tools.
-    if (mx < LeftPannelW || mx >= RightpanelX) return true;
+    if (mx < LeftPannelW || mx >= RightpanelX || inFilterPanel(mx, my)) return true;
     return false;
   }
 
   boolean handleMouseDragged(App app, int mx, int my, int btn) {
-    return (mx >= RightpanelX || mx < LeftPannelW);
+    return (mx >= RightpanelX || mx < LeftPannelW || inFilterPanel(mx, my));
   }
   boolean handleMouseReleased(App app, int mx, int my, int btn) {
-    return (mx >= RightpanelX || mx < LeftPannelW);
+    return (mx >= RightpanelX || mx < LeftPannelW || inFilterPanel(mx, my));
   }
   boolean handleMouseWheel(App app, float delta) {
     return false;
+  }
+
+  boolean inFilterPanel(int mx, int my) {
+    if (filterPanel == null || !filterPanelVisible) return false;
+    Rectangle r = filterPanel.getBounds();
+    return mx >= r.x && mx <= r.x + r.width && my >= r.y && my <= r.y + r.height;
   }
 
   // *******File Opening*******

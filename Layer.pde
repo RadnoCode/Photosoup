@@ -28,8 +28,9 @@ class Layer {
     PImage processedImg;
     PImage thumbnail;
 
-    static final int THUMB_W = 64;
-    static final int THUMB_H = 64;
+    // Thumbnails are pre-rendered at the exact UI icon size.
+    static final int THUMB_W = 48;
+    static final int THUMB_H = 48;
 
     Layer(PImage img, int id) {
         this.ID = id;
@@ -48,29 +49,42 @@ class Layer {
         thumbnailDirty = true;
     }
 
+    // ----- Thumbnail pipeline -----
     PImage getThumbnail() {
-        if (!thumbnailDirty && thumbnail != null) {
+        if (!thumbnailDirty && thumbnail != null && !filterdirty) {
             return thumbnail;
         }
-        PImage source = processedImg != null ? processedImg : img;
-        thumbnail = generateThumbnail(source, source != null ? source.width : 0, source != null ? source.height : 0);
+        // Keep processed image up to date so the thumbnail reflects filters.
+        if (filterdirty && img != null) {
+            applyFilters();
+        }
+        thumbnail = createThumbnail();
         thumbnailDirty = false;
         return thumbnail;
     }
 
-    PImage generateThumbnail(PImage source, int baseW, int baseH) {
-        if (source == null || baseW <= 0 || baseH <= 0) return null;
+    PImage createThumbnail() {
+        PImage source = thumbnailSource();
+        if (source == null) return null;
+
         PGraphics pg = createGraphics(THUMB_W, THUMB_H);
         pg.beginDraw();
         pg.clear();
-        float s = min((float)THUMB_W / baseW, (float)THUMB_H / baseH);
-        float w = baseW * s;
-        float h = baseH * s;
+
+        float s = min((float) THUMB_W / max(1, source.width), (float) THUMB_H / max(1, source.height));
+        float w = max(1, source.width * s);
+        float h = max(1, source.height * s);
         float dx = (THUMB_W - w) * 0.5f;
         float dy = (THUMB_H - h) * 0.5f;
         pg.image(source, dx, dy, w, h);
+
         pg.endDraw();
         return pg.get();
+    }
+
+    PImage thumbnailSource() {
+        if (processedImg != null) return processedImg;
+        return img;
     }
 
     PVector canvasToLocal(float cx, float cy) {
@@ -140,8 +154,8 @@ class Layer {
             f.layer = this;
             f.apply(this);
         }
+        thumbnailDirty = true;
         filterdirty = false;
-        invalidateThumbnail();
     }
 
     // ---------- Geometry helpers ----------
@@ -240,6 +254,40 @@ class TextLayer extends Layer {
     void setFontSize(int s) { fontSize = max(1, s); fontCache = null; metricsDirty = true; invalidateThumbnail(); }
     void setFontName(String s) { fontName = s; fontCache = null; metricsDirty = true; invalidateThumbnail(); }
     void setFillCol(int c) { fillCol = c; invalidateThumbnail(); }
+
+    @Override
+    PImage createThumbnail() {
+        ensureFont();
+        updateMetricsIfNeeded();
+
+        PGraphics pg = createGraphics(THUMB_W, THUMB_H);
+        pg.beginDraw();
+        pg.clear();
+
+        pg.textFont(fontCache);
+        pg.textSize(fontSize);
+        pg.textAlign(LEFT, BASELINE);
+
+        float textW = max(1, pg.textWidth(text));
+        float textH = max(1, pg.textAscent() + pg.textDescent());
+        float s = min((float) THUMB_W / textW, (float) THUMB_H / textH);
+
+        float dx = (THUMB_W - textW * s) * 0.5f;
+        float dy = (THUMB_H - textH * s) * 0.5f + pg.textAscent() * s;
+
+        pg.pushMatrix();
+        pg.translate(dx, dy);
+        pg.scale(s);
+
+        int a = int(alpha(fillCol) * opacity);
+        int c = color(red(fillCol), green(fillCol), blue(fillCol), a);
+        pg.fill(c);
+        pg.text(text, 0, 0);
+        pg.popMatrix();
+
+        pg.endDraw();
+        return pg.get();
+    }
 }
 
 class LayerStack {
