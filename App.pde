@@ -113,7 +113,11 @@ public class App {
     }
     if (k=='m' || k=='M') {
       tools.setTool(new MoveTool());
-      return;
+      return;      
+    }
+    if (k=='v' || k=='V') {
+    tools.setTool(new LayerMoveTool(history));
+    return;
     }
     if (k=='c' || k=='C') {
       tools.setTool(new CropTool(history));

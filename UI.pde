@@ -138,6 +138,7 @@ class UI {
     
     addDivider(toolPanel);
     addToolButton("hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
+    addToolButton("move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)));
     addToolButton("crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
     addToolButton("rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
     addToolButton("scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
