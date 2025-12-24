@@ -452,9 +452,6 @@ class SetTextColorCommand implements Command {
   }
 }
 class AddFilterCommand implements Command {
-
-
-
   Layer layer;
   Filter filter;
 
@@ -601,10 +598,10 @@ class layerMoveCommand implements Command {
   float beforeX, beforeY;
   float afterX, afterY;
 
-  layerMoveCommand(Layer layer, float afterX, float afterY) {
+  layerMoveCommand(Layer layer, float beforeX, float beforeY, float afterX, float afterY) {
     this.layer = layer;
-    this.beforeX = layer.x;
-    this.beforeY = layer.y;
+    this.beforeX = beforeX;
+    this.beforeY = beforeY;
     this.afterX = afterX;
     this.afterY = afterY;
   }

@@ -316,8 +316,7 @@ class LayerMoveTool implements Tool {
 
     // 只有当位置真的发生变化时，才提交到历史记录
     if (target.x != initialLayerX || target.y != initialLayerY) {
-      // 注意这里传入的是最终的 target.x 和 target.y
-      history.perform(doc, new layerMoveCommand(target, target.x, target.y));
+      history.perform(doc, new layerMoveCommand(target, initialLayerX, initialLayerY, target.x, target.y));
     }
   }
 
