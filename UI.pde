@@ -438,7 +438,7 @@ class UI {
     // 在独立应用里找不到文件时，弹窗告诉用户具体路径
     JOptionPane.showMessageDialog(
       null,
-      "已导出到：\n" + path,
+      "Successfully export to\n" + path,
       "Export Completed",
       JOptionPane.INFORMATION_MESSAGE
       );

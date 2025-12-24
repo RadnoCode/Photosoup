@@ -13,7 +13,10 @@ class Renderer{
       || doc.checkerTileSize != s) {
       doc.buildChecker(s);
     }
-    image(doc.checkerCache, 0, 0);
+    // Only paint the current view area so the checkerboard matches the cropped bounds.
+    image(doc.checkerCache,
+      doc.viewX, doc.viewY, doc.viewW, doc.viewH,
+      doc.viewX, doc.viewY, doc.viewW, doc.viewH);
     popMatrix();
   }// 棋盘格
 

@@ -149,6 +149,7 @@ class AspectPreviewPanel extends JPanel {
 // ---------- Processing entry ----------
 
 void settings() {
+  pixelDensity(1);
   Rectangle usable = GraphicsEnvironment
     .getLocalGraphicsEnvironment()
     .getMaximumWindowBounds();    
