@@ -9,7 +9,7 @@ class UI {
   PApplet parent;
   Document doc;
 
-  int RightpanelW = 340;
+  int RightpanelW = 300;
   int RightpanelX = width-RightpanelW;
   int LeftPannelW = 48;
   int filterPanelMaxW = 48;
@@ -136,63 +136,28 @@ class UI {
     return copy;
   }
 
-
+  int SizeFirst=32,SizeSecond=24;
   void addDivider(JPanel panel) {
-  panel.add(Box.createVerticalStrut(8));
+    panel.add(Box.createVerticalStrut(8));
 
-  JPanel line = new JPanel();
-  line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-  line.setPreferredSize(new Dimension(1, 1));
-  line.setBackground(new Color(255,255,255,25));
-  line.setOpaque(true);
+    JPanel line = new JPanel();
+    line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+    line.setPreferredSize(new Dimension(1, 1));
+    line.setBackground(new Color(255,255,255,25));
+    line.setOpaque(true);
 
-  panel.add(line);
-  panel.add(Box.createVerticalStrut(8));
+    panel.add(line);
+    panel.add(Box.createVerticalStrut(8));
 }
-
-  void buildToolPanel() {
-    toolPanel = new JPanel();
-    toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
-    toolPanel.setOpaque(true);
-    toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
-    toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0)); // remove padding gap
-
-    addToolButton(toolPanel,"import", "Import an image", () -> openFileDialog());
-    addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas());
-    
-    addDivider(toolPanel);
-    addToolButton(toolPanel,"hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()));
-    addToolButton(toolPanel, "move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)));
-    addToolButton(toolPanel, "crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)));
-    addToolButton(toolPanel, "rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)));
-    addToolButton(toolPanel, "scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)));
-    addToolButton(toolPanel, "text", "Create a text layer", () -> createTextLayer());
-    
-    addDivider(toolPanel);
-    addToolButton(toolPanel,"undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc));
-    addToolButton(toolPanel,"redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc));
-
-    addDivider(toolPanel);
-    filterButton = addToolButton(toolPanel,"filter", "Filters", () -> toggleFilterPanel());
-    buildFilterPanel();
-
-    attachToolPanelToFrame();
-  }
-  
-  JButton addToolButton(JPanel targetPanel, String iconFile, String tooltip, Runnable action) {
+  JButton addToolButton(JPanel targetPanel, String iconFile, String tooltip, Runnable action,int size) {
     int btnWidth = (targetPanel == toolPanel)
       ? LeftPannelW
       : (targetPanel == filterPanel ? filterPanelMaxW : 20);
-
-    int btnHeight = 48;
-    int iconTarget = 32; 
-
+    int btnHeight = size+10;
+    int iconTarget =size; 
     Icon icon = loadIcon(iconFile, iconTarget);
-
     String label = iconFile.length() > 0 ? iconFile.substring(0, 1).toUpperCase() + iconFile.substring(1): "";
-
     JButton btn = new JButton();
-
     // --- icon / text 兜底逻辑 ---
     if (icon != null) {
       btn.setIcon(icon);
@@ -202,43 +167,60 @@ class UI {
       btn.setText(label);
       btn.setFont(btn.getFont().deriveFont(Font.BOLD, 13f));
     }
-
-
     btn.putClientProperty("JButton.buttonType", "toolBarButton");
-
-
     btn.setContentAreaFilled(true);
-
-
     btn.setBorderPainted(false);
-
-
     btn.setFocusPainted(false);
     btn.setFocusable(false);
     btn.setRolloverEnabled(true);
-
-
     btn.setOpaque(true);
-
     if (icon == null) btn.setText(label);
     else btn.setText("");
-
     btn.setToolTipText(tooltip);
     btn.setHorizontalAlignment(SwingConstants.CENTER);
     btn.setVerticalAlignment(SwingConstants.CENTER);
-
     Dimension fixed = new Dimension(btnWidth, btnHeight);
     btn.setMaximumSize(fixed);
     btn.setPreferredSize(fixed);
     btn.setMinimumSize(fixed);
-
     btn.addActionListener(e -> action.run());
-
+    
     targetPanel.add(btn);
     targetPanel.add(Box.createVerticalStrut(6));
     toolButtons.add(btn);
     return btn;
 }
+  
+  void buildToolPanel() {
+    toolPanel = new JPanel();
+    toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
+    toolPanel.setOpaque(true);
+    toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
+    toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0)); // remove padding gap
+
+    addToolButton(toolPanel,"import", "Import an image", () -> openFileDialog(),SizeFirst);
+    addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas(),SizeFirst);
+    
+    addDivider(toolPanel);
+    addToolButton(toolPanel,"hand", "Hand tool to move whole canvas(M)", () -> app.tools.setTool(new MoveTool()),SizeFirst);
+    addToolButton(toolPanel, "move", "Move Layer (V)", () -> app.tools.setTool(new LayerMoveTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "crop", "Crop tool (C)", () -> app.tools.setTool(new CropTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "rotate", "Rotate tool (R)", () -> app.tools.setTool(new RotateTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "scale", "Scale tool (S)", () -> app.tools.setTool(new ScaleTool(app.history)),SizeFirst);
+    addToolButton(toolPanel, "text", "Create a text layer", () -> createTextLayer(),SizeFirst);
+    
+    addDivider(toolPanel);
+    addToolButton(toolPanel,"undo", "Undo (Ctrl/Cmd+Z)", () -> app.history.undo(app.doc),SizeFirst);
+    addToolButton(toolPanel,"redo", "Redo (Ctrl/Cmd+Shift+Z)", () -> app.history.redo(app.doc),SizeFirst);
+
+    addDivider(toolPanel);
+    filterButton = addToolButton(toolPanel,"filter", "Filters", () -> toggleFilterPanel(),SizeFirst);
+    buildFilterPanel();
+
+    attachToolPanelToFrame();
+  }
+  
+
 
 
   void buildFilterPanel() {
@@ -253,9 +235,9 @@ class UI {
     
     
 
-    addToolButton(filterPanel,"blur", "Add Gaussian Blur filter", () -> applyFilter(new GaussianBlurFilter(5, 10)));
-    addToolButton(filterPanel,"contrast", "Add Contrast filter", () -> applyFilter(new ContrastFilter(1.5)));
-    addToolButton(filterPanel,"sharpen", "Add Sharpen filter", () -> applyFilter(new SharpenFilter(1.0)));
+    addToolButton(filterPanel,"blur", "Add Gaussian Blur filter", () -> applyFilter(new GaussianBlurFilter(5, 10)),SizeSecond);
+    addToolButton(filterPanel,"contrast", "Add Contrast filter", () -> applyFilter(new ContrastFilter(1.5)),SizeSecond);
+    addToolButton(filterPanel,"sharpen", "Add Sharpen filter", () -> applyFilter(new SharpenFilter(1.0)),SizeSecond);
 
     int clampW = filterPanelMaxW;
     Dimension pref = filterPanel.getPreferredSize();

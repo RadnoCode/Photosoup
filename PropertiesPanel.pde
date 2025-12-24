@@ -47,8 +47,8 @@ class PropertiesPanel {
     root = new JPanel(new BorderLayout());
     root.setOpaque(true);
     root.setBackground(bgRoot);
-    root.setPreferredSize(new Dimension(300, 300));
-
+    root.setPreferredSize(new Dimension(260, 300));
+    root.setMaximumSize(new Dimension(260,Integer.MAX_VALUE));
     tabs = new JTabbedPane();
     tabs.setBackground(bgRoot);
     tabs.setForeground(fgText);
@@ -65,7 +65,8 @@ class PropertiesPanel {
     transformContent = new JPanel();
     transformContent.setLayout(new BoxLayout(transformContent, BoxLayout.Y_AXIS));
     transformContent.setBackground(bgPanel);
-    transformContent.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+    transformContent.setMaximumSize(new Dimension(300,Integer.MAX_VALUE));
+    transformContent.setBorder(BorderFactory.createEmptyBorder(8, 5, 8, 15));
 
     int rangeX = doc.canvas != null ? doc.canvas.width : 2000;
     int rangeY = doc.canvas != null ? doc.canvas.height : 2000;
@@ -236,8 +237,9 @@ class PropertiesPanel {
   // --- Transform helpers ---
   JSlider buildSlider(int min, int max, int value) {
     JSlider s = new JSlider(min, max, value);
-    s.setBackground(bgBlock);
-    s.setOpaque(true);
+    s.setUI(new FlatSliderUI());
+    s.setOpaque(false);
+
     s.setForeground(accent);
     s.setBorder(BorderFactory.createEmptyBorder());
     return s;
@@ -494,6 +496,29 @@ void openColorPicker() {
   }
 
 
+  JPanel makeSectionBlock(String title) {
+    JPanel panel = new JPanel();
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+    panel.setMaximumSize(new Dimension(280, Integer.MAX_VALUE));
+    panel.setOpaque(true);
+    panel.setBackground(bgBlock);
+    panel.setBorder(BorderFactory.createCompoundBorder(
+      BorderFactory.createLineBorder(new Color(70, 70, 70)),
+      BorderFactory.createEmptyBorder(10, 10, 10, 10)
+    ));
+
+    JLabel header = new JLabel(title);
+    JPanel head=new JPanel();
+    head.setLayout(new FlowLayout(FlowLayout.LEFT));
+    head.setOpaque(false);
+    header.setForeground(fgText);
+    header.setFont(header.getFont().deriveFont(Font.BOLD));
+    header.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+    head.add(header);
+    panel.add(head);
+    return panel;
+}
 
 
 
@@ -529,23 +554,6 @@ void openColorPicker() {
   }
 
 
-  JPanel makeSectionBlock(String title) {
-    JPanel panel = new JPanel();
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-    panel.setOpaque(true);
-    panel.setBackground(bgBlock);
-    panel.setBorder(BorderFactory.createCompoundBorder(
-      BorderFactory.createLineBorder(new Color(70, 70, 70)),
-      BorderFactory.createEmptyBorder(10, 10, 10, 10)
-    ));
-
-    JLabel header = new JLabel(title);
-    header.setForeground(fgText);
-    header.setFont(header.getFont().deriveFont(Font.BOLD));
-    header.setBorder(BorderFactory.createEmptyBorder(0, 0, 6, 0));
-    panel.add(header);
-    return panel;
-  }
 
   JPanel makeFilterBlock(String title) {
     return makeSectionBlock(title);
