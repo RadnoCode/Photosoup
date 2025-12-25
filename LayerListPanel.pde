@@ -37,14 +37,10 @@ class LayerListPanel {
     list.setDropMode(DropMode.INSERT);
     list.setAutoscrolls(true);
     list.setTransferHandler(new ReorderHandler());
-    list.setBackground(new Color(55, 55, 55));
-    list.setForeground(Color.WHITE);
     list.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 
     list.setFixedCellHeight(56);                 // 48缩略图 + 上下呼吸
     list.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-    list.setSelectionBackground(new Color(80, 80, 80));
-    list.setSelectionForeground(Color.WHITE);
     list.setOpaque(true);
 
 
@@ -122,19 +118,18 @@ class LayerListPanel {
     });
 
     scrollPane = new JScrollPane(list);
-    scrollPane.setBorder(BorderFactory.createLineBorder(new Color(70, 70, 70)));
-    scrollPane.getViewport().setBackground(new Color(45, 45, 45));
-    scrollPane.setBackground(new Color(45, 45, 45));
+    scrollPane.setBorder(BorderFactory.createEmptyBorder());
+    scrollPane.getViewport().setOpaque(false);
+  scrollPane.setOpaque(false);
 
 
   }
 
   void configureHeader() {
     JPanel header = new JPanel(new BorderLayout(10, 10));
-    header.setOpaque(false);
+    header.setOpaque(true);
     header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
     JLabel label = new JLabel("Layers");
-    label.setForeground(new Color(80,80,80));
     label.setFont(new Font("SansSerif", Font.BOLD, 16));
 
 
@@ -142,13 +137,13 @@ class LayerListPanel {
     addButton.addActionListener(e -> addBlankLayer());
 
     JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-    actions.setOpaque(false);
+    actions.setOpaque(true);
     actions.add(addButton);
 
     header.add(label, BorderLayout.WEST);
     header.add(actions, BorderLayout.EAST);
 
-    container.setOpaque(false);
+    container.setOpaque(true);
     container.add(header, BorderLayout.NORTH);
     container.add(scrollPane, BorderLayout.CENTER);
   }

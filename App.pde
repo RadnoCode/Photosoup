@@ -5,9 +5,6 @@ public class App {
   CommandManager history;
   UI ui;
   int SelectedColor = color(255, 0, 0, 255);
-
-
-  
   /* Five Core Modules
     Doc: The single source of truth for project file data
     Renderer: Retrieves layer information from Doc and renders visual content on the canvas
