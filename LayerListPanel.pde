@@ -9,7 +9,14 @@ class LayerListPanel {
   DefaultListModel<Layer> model = new DefaultListModel<Layer>();
   JList<Layer> list = new JList<Layer>(model);
   JScrollPane scrollPane;
-  JButton addButton = new JButton("+");
+  ImageIcon add = new ImageIcon("data/icon/addlayer.png");
+  ImageIcon remove = new ImageIcon("data/icon/trashbin.png");
+
+
+
+
+  JButton addButton = new JButton(add);
+  JButton removeButton = new JButton(remove);
   JPanel container = new JPanel(new BorderLayout(6, 6));
 
   final int EYE_W = 28;
@@ -119,8 +126,8 @@ class LayerListPanel {
 
     scrollPane = new JScrollPane(list);
     scrollPane.setBorder(BorderFactory.createEmptyBorder());
-    scrollPane.getViewport().setOpaque(false);
-  scrollPane.setOpaque(false);
+    scrollPane.getViewport().setOpaque(true);
+    scrollPane.setOpaque(true);
 
 
   }
@@ -133,12 +140,16 @@ class LayerListPanel {
     label.setFont(new Font("SansSerif", Font.BOLD, 16));
 
 
-    addButton.setMargin(new Insets(2, 8, 2, 8));
+    addButton.setMargin(new Insets(6, 6, 6, 6));
+    removeButton.setMargin(new Insets(6, 6, 6, 6));
+
     addButton.addActionListener(e -> addBlankLayer());
+    removeButton.addActionListener(e->deleteSelectedLayer());
 
     JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
     actions.setOpaque(true);
     actions.add(addButton);
+    actions.add(removeButton);
 
     header.add(label, BorderLayout.WEST);
     header.add(actions, BorderLayout.EAST);
