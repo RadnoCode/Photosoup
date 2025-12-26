@@ -42,7 +42,7 @@ public class App {
     });
 
     tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
-  }// Constructor: Initializes the five core modules
+  }// Constructor: Initializes the five core modulees
 
   // Allow core shortcuts to work even when Swing panels hold focus.
   void installGlobalShortcuts() {
@@ -51,14 +51,11 @@ public class App {
         if (e.getID() != KeyEvent.KEY_PRESSED) return false;
 
         Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        // Let Processing handle keys normally when the canvas has focus.
-        if (focus instanceof PSurfaceAWT.SmoothCanvas) return false;
 
         boolean primary = e.isControlDown() || e.isMetaDown();
         boolean shift   = e.isShiftDown();
         boolean isText  = focus instanceof JTextComponent;
         int code = e.getKeyCode();
-
         if (primary && code == KeyEvent.VK_Z) {
           history.undo(doc);
           return true;
@@ -123,7 +120,7 @@ public class App {
     boolean alt     = keyEvent.isAltDown();
     Component focus = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
     
-  //Handle focus
+    //Handle focus
 
     // When typing in a text field, ignore shortcuts.
     if(focus != null && (focus instanceof JTextComponent)) {
