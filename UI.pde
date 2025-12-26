@@ -191,7 +191,7 @@ class UI {
     toolPanel.setBackground(new Color(60, 60, 60)); // match app dark background
     toolPanel.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 4)); // remove padding gap
 
-    addToolButton(toolPanel,"import", "Import image(O)", () -> openFileDialog(),SizeFirst);
+    addToolButton(toolPanel,"import", "Import image (O)", () -> openFileDialog(),SizeFirst);
     addToolButton(toolPanel,"export", "Export canvas (E)", () -> exportCanvas(),SizeFirst);
     
     addDivider(toolPanel);

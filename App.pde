@@ -41,7 +41,8 @@ public class App {
       }
     });
 
-    tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool 默认移动工具
+    tools.setTool(new MoveTool()); // When you enter, defualtly choose MoveTool
+    
   }// Constructor: Initializes the five core modulees
 
   // Allow core shortcuts to work even when Swing panels hold focus.

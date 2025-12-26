@@ -263,6 +263,7 @@ void setup() {
     Document doc = new Document(spec.width, spec.height);
     app = new App(this, doc);
     app.doc.view.setFit(app.doc);
+    app.ui.layerListPanel.addBlankLayer();
 }
 
 
