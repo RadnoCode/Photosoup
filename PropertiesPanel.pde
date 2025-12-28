@@ -24,6 +24,11 @@ class PropertiesPanel {
   JTextField fieldX, fieldY, fieldRotation, fieldScale, fieldOpacity;
   JSlider sliderX, sliderY, sliderRotation, sliderScale, sliderOpacity;
 
+  // Adjust controls
+  JPanel adjustContent;
+  JTextField fieldBrightness, fieldSaturation;
+  JSlider sliderBrightness, sliderSaturation;
+
   // Text controls
   JPanel textContent;
   JTextField fieldText;
@@ -59,6 +64,7 @@ class PropertiesPanel {
     tabs.setOpaque(false);
 
     buildTransformTab();
+    buildAdjustTab();
     buildTextTab();
     buildFilterTab();
 
@@ -116,6 +122,37 @@ class PropertiesPanel {
     transformScroll.getVerticalScrollBar().setUnitIncrement(12);
     transformScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     tabs.addTab("Transform", transformScroll);
+  }
+
+  void buildAdjustTab() {
+    adjustContent = new JPanel();
+    adjustContent.setLayout(new BoxLayout(adjustContent, BoxLayout.Y_AXIS));
+    adjustContent.setBackground(bgPanel);
+    adjustContent.setBorder(BorderFactory.createEmptyBorder(8, 5, 8, 15));
+    adjustContent.setMaximumSize(new Dimension(300, Integer.MAX_VALUE));
+
+    fieldBrightness = styledField("1.00");
+    sliderBrightness = buildSlider(0, 200, 100);
+    bindBrightnessControl(fieldBrightness, sliderBrightness);
+    JPanel brightnessBlock = makeSectionBlock("Brightness");
+    brightnessBlock.add(makeRow("Brightness", fieldBrightness, sliderBrightness));
+    adjustContent.add(brightnessBlock);
+
+    fieldSaturation = styledField("1.00");
+    sliderSaturation = buildSlider(0, 200, 100);
+    bindSaturationControl(fieldSaturation, sliderSaturation);
+    JPanel saturationBlock = makeSectionBlock("Saturation");
+    saturationBlock.add(makeRow("Saturation", fieldSaturation, sliderSaturation));
+    adjustContent.add(Box.createVerticalStrut(8));
+    adjustContent.add(saturationBlock);
+
+    JScrollPane adjustScroll = new JScrollPane(adjustContent);
+    adjustScroll.setBorder(BorderFactory.createEmptyBorder());
+    adjustScroll.getViewport().setBackground(bgPanel);
+    adjustScroll.getVerticalScrollBar().setUnitIncrement(12);
+    adjustScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+    tabs.addTab("Adjust", adjustScroll);
   }
 
 void buildTextTab() {
@@ -255,6 +292,11 @@ void buildTextTab() {
     fieldRotation.setText(String.valueOf(deg));
     fieldScale.setText(String.format("%.2f", scaleVal / 100.0f));
     fieldOpacity.setText(String.valueOf(sliderOpacity.getValue()));
+    sliderBrightness.setValue(clampSlider(sliderBrightness, PApplet.round(layer.brightness * 100)));
+    sliderSaturation.setValue(clampSlider(sliderSaturation, PApplet.round(layer.saturation * 100)));
+    fieldBrightness.setText(String.format("%.2f", sliderBrightness.getValue() / 100.0f));
+    fieldSaturation.setText(String.format("%.2f", sliderSaturation.getValue() / 100.0f));
+    setAdjustControlsEnabled(layer.img != null);
 
     if (layer instanceof TextLayer) {
       TextLayer tl = (TextLayer) layer;
@@ -283,6 +325,13 @@ void buildTextTab() {
 
   void setVisible(boolean visible) {
     if (root != null) root.setVisible(visible);
+  }
+
+  void setAdjustControlsEnabled(boolean enabled) {
+    if (fieldBrightness != null) fieldBrightness.setEnabled(enabled);
+    if (sliderBrightness != null) sliderBrightness.setEnabled(enabled);
+    if (fieldSaturation != null) fieldSaturation.setEnabled(enabled);
+    if (sliderSaturation != null) sliderSaturation.setEnabled(enabled);
   }
 
 
@@ -441,6 +490,62 @@ void buildTextTab() {
     });
   }
 
+  void bindBrightnessControl(JTextField field, JSlider slider) {
+    field.addActionListener(e -> {
+      if (isUpdating) return;
+      float val = parseFloatSafe(field.getText(), slider.getValue() / 100.0f);
+      int sliderVal = clampSlider(slider, PApplet.round(val * 100));
+      isUpdating = true;
+      slider.setValue(sliderVal);
+      isUpdating = false;
+      applyBrightnessFromUI();
+    });
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+      public void focusLost(java.awt.event.FocusEvent e) {
+        if (isUpdating) return;
+        float val = parseFloatSafe(field.getText(), slider.getValue() / 100.0f);
+        int sliderVal = clampSlider(slider, PApplet.round(val * 100));
+        isUpdating = true;
+        slider.setValue(sliderVal);
+        isUpdating = false;
+        applyBrightnessFromUI();
+      }
+    });
+    slider.addChangeListener(e -> {
+      if (isUpdating) return;
+      field.setText(String.format("%.2f", slider.getValue() / 100.0f));
+      if (!slider.getValueIsAdjusting()) applyBrightnessFromUI();
+    });
+  }
+
+  void bindSaturationControl(JTextField field, JSlider slider) {
+    field.addActionListener(e -> {
+      if (isUpdating) return;
+      float val = parseFloatSafe(field.getText(), slider.getValue() / 100.0f);
+      int sliderVal = clampSlider(slider, PApplet.round(val * 100));
+      isUpdating = true;
+      slider.setValue(sliderVal);
+      isUpdating = false;
+      applySaturationFromUI();
+    });
+    field.addFocusListener(new java.awt.event.FocusAdapter() {
+      public void focusLost(java.awt.event.FocusEvent e) {
+        if (isUpdating) return;
+        float val = parseFloatSafe(field.getText(), slider.getValue() / 100.0f);
+        int sliderVal = clampSlider(slider, PApplet.round(val * 100));
+        isUpdating = true;
+        slider.setValue(sliderVal);
+        isUpdating = false;
+        applySaturationFromUI();
+      }
+    });
+    slider.addChangeListener(e -> {
+      if (isUpdating) return;
+      field.setText(String.format("%.2f", slider.getValue() / 100.0f));
+      if (!slider.getValueIsAdjusting()) applySaturationFromUI();
+    });
+  }
+
   void applyTransformFromUI() {
     if (activeLayer == null) return;
 
@@ -455,6 +560,16 @@ void buildTextTab() {
   void applyOpacityFromUI() {
     if (activeLayer == null) return;
     app.history.perform(doc, new OpacityCommand(activeLayer, sliderOpacity.getValue()));
+  }
+
+  void applyBrightnessFromUI() {
+    if (activeLayer == null || activeLayer.img == null) return;
+    app.history.perform(doc, new BrightnessChangeCommand(activeLayer, sliderBrightness.getValue() / 100.0f));
+  }
+
+  void applySaturationFromUI() {
+    if (activeLayer == null || activeLayer.img == null) return;
+    app.history.perform(doc, new SaturationChangeCommand(activeLayer, sliderSaturation.getValue() / 100.0f));
   }
 
 

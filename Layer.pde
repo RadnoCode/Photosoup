@@ -19,6 +19,8 @@ class Layer {
     float contrast = 1.0;
     float sharp = 0.0;
     float blur = 0.0;
+    float brightness = 1.0;
+    float saturation = 1.0;
 
     ArrayList<Filter> filters = new ArrayList<Filter>();
     // Pivot in LOCAL space (image space)
@@ -148,6 +150,7 @@ class Layer {
 
     void applyFilters() {
         processedImg = img.get();
+        applyColorAdjustments(processedImg);
         for (int i = 0; i < filters.size(); i++) {
             Filter f = filters.get(i);
             f.layer = this;
@@ -164,6 +167,44 @@ class Layer {
 
     String toString() {
         return name;
+    }
+
+    void applyColorAdjustments(PImage target) {
+        if (target == null) return;
+        float bright = brightness;
+        float sat = saturation;
+        if (abs(bright - 1.0f) < 1e-3f && abs(sat - 1.0f) < 1e-3f) return;
+
+        target.loadPixels();
+        for (int i = 0; i < target.pixels.length; i++) {
+            int c = target.pixels[i];
+            int a = (c >>> 24) & 255;
+            float r = (c >>> 16) & 255;
+            float g = (c >>> 8) & 255;
+            float b = c & 255;
+
+            r *= bright;
+            g *= bright;
+            b *= bright;
+
+            float gray = 0.299f * r + 0.587f * g + 0.114f * b;
+            r = gray + (r - gray) * sat;
+            g = gray + (g - gray) * sat;
+            b = gray + (b - gray) * sat;
+
+            int outR = clamp255(r);
+            int outG = clamp255(g);
+            int outB = clamp255(b);
+
+            target.pixels[i] = (a << 24) | (outR << 16) | (outG << 8) | outB;
+        }
+        target.updatePixels();
+    }
+
+    int clamp255(float v) {
+        if (v < 0) return 0;
+        if (v > 255) return 255;
+        return (int)(v + 0.5f);
     }
 }
 

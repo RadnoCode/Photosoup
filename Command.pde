@@ -588,6 +588,64 @@ class SharpenChangeCommand implements Command {
   }
 }
 
+class BrightnessChangeCommand implements Command {
+  Layer layer;
+  float before, after;
+
+  BrightnessChangeCommand(Layer layer, float after) {
+    this.layer = layer;
+    this.after = after;
+    this.before = layer.brightness;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.brightness = after;
+    layer.filterdirty = true;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.brightness = before;
+    layer.filterdirty = true;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Brightness";
+  }
+}
+
+class SaturationChangeCommand implements Command {
+  Layer layer;
+  float before, after;
+
+  SaturationChangeCommand(Layer layer, float after) {
+    this.layer = layer;
+    this.after = after;
+    this.before = layer.saturation;
+  }
+
+  public void execute(Document doc) {
+    if (layer == null) return;
+    layer.saturation = after;
+    layer.filterdirty = true;
+    doc.markChanged();
+  }
+
+  public void undo(Document doc) {
+    if (layer == null) return;
+    layer.saturation = before;
+    layer.filterdirty = true;
+    doc.markChanged();
+  }
+
+  public String name() {
+    return "Change Saturation";
+  }
+}
+
 class layerMoveCommand implements Command {
   Layer layer;
   float beforeX, beforeY;
