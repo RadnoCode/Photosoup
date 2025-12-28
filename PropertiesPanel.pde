@@ -108,14 +108,6 @@ class PropertiesPanel {
     transformContent.add(Box.createVerticalStrut(8));
     transformContent.add(scaleBlock);
 
-    fieldOpacity = styledField("255");
-    sliderOpacity = buildSlider(0, 255, 255);
-    bindOpacityControl(fieldOpacity, sliderOpacity);
-    JPanel opacityBlock = makeSectionBlock("Opacity");
-    opacityBlock.add(makeRow("Opacity", fieldOpacity, sliderOpacity));
-    transformContent.add(Box.createVerticalStrut(8));
-    transformContent.add(opacityBlock);
-
     JScrollPane transformScroll = new JScrollPane(transformContent);
     transformScroll.setBorder(BorderFactory.createEmptyBorder());
     transformScroll.getViewport().setBackground(bgPanel);
@@ -130,6 +122,14 @@ class PropertiesPanel {
     adjustContent.setBackground(bgPanel);
     adjustContent.setBorder(BorderFactory.createEmptyBorder(8, 5, 8, 15));
     adjustContent.setMaximumSize(new Dimension(300, Integer.MAX_VALUE));
+
+    fieldOpacity = styledField("255");
+    sliderOpacity = buildSlider(0, 255, 255);
+    bindOpacityControl(fieldOpacity, sliderOpacity);
+    JPanel opacityBlock = makeSectionBlock("Opacity");
+    opacityBlock.add(makeRow("Opacity", fieldOpacity, sliderOpacity));
+    adjustContent.add(opacityBlock);
+    adjustContent.add(Box.createVerticalStrut(8));
 
     fieldBrightness = styledField("1.00");
     sliderBrightness = buildSlider(0, 200, 100);

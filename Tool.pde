@@ -38,7 +38,7 @@ class ToolManager {
   }
 }
 
-// ---------- Move tool (view-only change, not a command) ----------
+// Move tool (view-only change, not a command)
 class MoveTool implements Tool {
   boolean dragging = false;
   int lastX, lastY;
@@ -171,7 +171,7 @@ class ScaleTool implements Tool{
   String name() {return "Scale";}
 }
 
-// ---------- Crop tool (creates a CropCommand on release) ----------
+//  Crop tool (creates a CropCommand on release
 class CropTool implements Tool {
   CommandManager history;
 
@@ -276,6 +276,7 @@ class CropTool implements Tool {
   }
 }
 
+//change layer's position
 class LayerMoveTool implements Tool {
   CommandManager history;
   Layer target;

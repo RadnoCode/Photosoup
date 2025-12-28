@@ -133,7 +133,7 @@ class ToggleVisibleCommand implements Command {
   }
 }
 
-
+//reorder layer
 class MoveLayerCommand implements Command {
   Layer layer;
   int from, toIndex;
